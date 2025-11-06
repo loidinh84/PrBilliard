@@ -54,7 +54,75 @@
           </div>
         </div>
       </header>
-      <main class="main"></main>
+      <main class="main">
+        <section class="section-summary">
+          <div class="section__card">
+            <span>Doanh thu hôm nay</span>
+            <strong>10.000.000đ</strong>
+          </div>
+          <div class="section__card">
+            <span>Số bàn đang mở</span>
+            <strong>0/4</strong>
+          </div>
+        </section>
+
+        <section class="table-section">
+          <!-- add table -->
+          <div class="add-table">
+            <button class="plus" id="add-table-plus">
+              <img src="./assets/icon/add.svg" alt="Plus" />
+              <span>Thêm bàn</span>
+            </button>
+          </div>
+          <div class="table__list">
+            <!-- table card -->
+            <div class="table">
+              ư
+              <!-- Header card -->
+              <div class="table__header">
+                <h3 class="table__title">Bàn 1</h3>
+                <div class="table__menu" id="table__menu-1">
+                  <button class="table__toggle">
+                    <img src="./assets/icon/3dot.svg" alt="Menu" />
+                  </button>
+                  <div class="table__drop">
+                    <a href="#" class="table__delete">
+                      <img src="./assets/icon/delete.svg" alt="Delete" />
+                    </a>
+                  </div>
+                </div>
+              </div>
+              <!-- body card -->
+              <div class="table__body">
+                <span>Giờ chơi: 01:29:59</span>
+                <span>Loại bàn: Lỗ</span>
+                <span class="table__status">Trạng thái: Trống</span>
+              </div>
+              <button class="table__start">Start</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <div class="table-modal" id="add-table-modal">
+      <div class="modal__content">
+        <form id="add-table-form">
+          <h2>Thêm bàn mới</h2>
+
+          <label for="table-nam">Tên bàn:</label>
+          <input type="text" id="table-name" placeholder="VD: Bàn 1" />
+
+          <label for="table-type">Loại bàn:</label>
+          <input type="text" id="table-type" placeholder="VD: Lỗ" />
+
+          <div class="modal__action">
+            <button type="button" class="btn-cancel" id="cancel-btn">
+              Hủy
+            </button>
+            <button type="submit" class="btn-submit">Thêm</button>
+          </div>
+        </form>
+      </div>
     </div>
     <script src="./assets/js/home.js"></script>
   </body>
