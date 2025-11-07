@@ -1,28 +1,150 @@
-const menuToggle = document.getElementById("menu-toggle");
-const menuContainer = document.getElementById("menu-container");
+// ==================== DOM Elements ====================
+const elements = {
+  menuToggle: document.getElementById("menu-toggle"),
+  menuContainer: document.getElementById("menu-container"),
+  addBtn: document.getElementById("add-table-plus"),
+  modal: document.getElementById("add-table-modal"),
+  cancelBtn: document.getElementById("cancel-btn"),
+  addTableForm: document.getElementById("add-table-form"),
+  tableName: document.getElementById("table-name"),
+  tableType: document.getElementById("table-type"),
+  tableList: document.querySelector(".table__list"),
+};
 
-menuToggle.addEventListener("click", function (event) {
-  event.stopPropagation();
-  menuContainer.classList.toggle("active");
+// ==================== Utility Functions ====================
+function formatTime(countTime) {
+  const hours = Math.floor(countTime / 3600);
+  const minutes = Math.floor((countTime % 3600) / 60);
+  const seconds = countTime % 60;
+
+  return [hours, minutes, seconds]
+    .map((unit) => String(unit).padStart(2, "0"))
+    .join(":");
+}
+
+function closeAllMenu(currentMenu = null) {
+  document.querySelectorAll(".table__menu.active").forEach((menu) => {
+    if (menu !== currentMenu) {
+      menu.classList.remove("active");
+    }
+  });
+}
+
+// ==================== Table HTML Template ====================
+function createTableHTML(name, type) {
+  return `
+    <div class="table__header">
+      <h3 class="table__title">${name}</h3>
+      <div class="table__menu">
+        <button class="table__toggle">
+          <img src="./assets/icon/3dot.svg" alt="Menu" />
+        </button>
+        <div class="table__drop">
+          <a href="#" class="table__edit">
+            <img src="./assets/icon/edit.svg" alt="Edit" />Edit
+          </a>
+          <a href="#" class="table__delete">
+            <img src="./assets/icon/delete.svg" alt="Delete" />Delete
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="table__body">
+      <span>Giờ chơi: <span class="table__timer">00:00:00</span></span>
+      <span>Loại bàn: ${type}</span>
+      <span>Trạng thái: <span class="table__status">Trống</span></span>
+    </div>
+    <button class="table__start">Start</button>
+  `;
+}
+
+// ==================== Table Timer Handler ====================
+function handleTimer(tableContainer, startButton, statusText, timeCount) {
+  const playing = tableContainer.classList.toggle("table__playing");
+
+  if (playing) {
+    startButton.textContent = "Stop";
+    statusText.textContent = "Đang chơi";
+
+    let second = 0;
+
+    tableContainer.timerID = setInterval(() => {
+      timeCount.textContent = formatTime(++second);
+      tableContainer.currentSeconds = second;
+    }, 1000);
+  } else {
+    startButton.textContent = "Start";
+    statusText.textContent = "Trống";
+    clearInterval(tableContainer.timerID);
+  }
+}
+
+// ==================== Event Handlers ====================
+// Menu toggle handler
+elements.menuToggle.addEventListener("click", (e) => {
+  e.stopPropagation();
+  closeAllMenu();
+  elements.menuContainer.classList.toggle("active");
 });
 
-window.addEventListener("click", function (event) {
-  if (
-    menuContainer.classList.contains("active") &&
-    event.target !== menuToggle
-  ) {
-    menuContainer.classList.remove("active");
+// Modal handlers
+elements.addBtn.addEventListener("click", () => {
+  elements.modal.classList.toggle("active");
+});
+
+elements.cancelBtn.addEventListener("click", () => {
+  elements.modal.classList.remove("active");
+});
+
+// Add table form handler
+elements.addTableForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+
+  const name = elements.tableName.value;
+  const type = elements.tableType.value;
+
+  console.log("Tên bàn đã nhập:", name);
+  console.log("Loại bàn đã nhập:", type);
+
+  const newTable = document.createElement("div");
+  newTable.classList.add("table");
+  newTable.innerHTML = createTableHTML(name, type);
+
+  elements.tableList.append(newTable);
+  elements.modal.classList.remove("active");
+
+  // Reset form
+  elements.tableName.value = "";
+  elements.tableType.value = "";
+});
+
+// Table list event delegation
+elements.tableList.addEventListener("click", (e) => {
+  // Handle menu toggle
+  const toggleButton = e.target.closest(".table__toggle");
+  if (toggleButton) {
+    e.stopPropagation();
+    elements.menuContainer.classList.remove("active");
+
+    const tableMenu = toggleButton.closest(".table__menu");
+    closeAllMenu(tableMenu);
+    tableMenu.classList.toggle("active");
+    return;
+  }
+
+  // Handle start/stop button
+  const startButton = e.target.closest(".table__start");
+  if (startButton) {
+    const table = startButton.closest(".table");
+    const statusText = table.querySelector(".table__status");
+    const timeCount = table.querySelector(".table__timer");
+
+    handleTimer(table, startButton, statusText, timeCount);
   }
 });
 
-const addBtn = document.getElementById("add-table-plus");
-const modal = document.getElementById("add-table-modal");
-const cancelBtn = document.getElementById("cancel-btn");
-
-addBtn.addEventListener("click", function () {
-  modal.classList.toggle("active");
-});
-
-cancelBtn.addEventListener("click", function () {
-  modal.classList.remove("active");
+// Close menus when clicking outside
+window.addEventListener("click", () => {
+  elements.menuContainer.classList.remove("active");
+  closeAllMenu();
 });

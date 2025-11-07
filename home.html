@@ -11,7 +11,7 @@
     <!-- header -->
     <div class="container">
       <header class="header">
-        <h1 class="header-left">Home</h1>
+        <a href="index.html" class="header-left">Home</a>
         <!-- header top -->
         <div class="header-right">
           <!-- User -->
@@ -77,7 +77,6 @@
           <div class="table__list">
             <!-- table card -->
             <div class="table">
-              ư
               <!-- Header card -->
               <div class="table__header">
                 <h3 class="table__title">Bàn 1</h3>
@@ -86,17 +85,24 @@
                     <img src="./assets/icon/3dot.svg" alt="Menu" />
                   </button>
                   <div class="table__drop">
+                    <a href="#" class="table__edit"
+                      ><img src="./assets/icon/edit.svg" alt="Edit" />Edit</a
+                    >
                     <a href="#" class="table__delete">
-                      <img src="./assets/icon/delete.svg" alt="Delete" />
+                      <img src="./assets/icon/delete.svg" alt="Delete" />Delete
                     </a>
                   </div>
                 </div>
               </div>
               <!-- body card -->
               <div class="table__body">
-                <span>Giờ chơi: 01:29:59</span>
+                <span
+                  >Giờ chơi: <span class="table__timer"> 00:00:00 </span></span
+                >
                 <span>Loại bàn: Lỗ</span>
-                <span class="table__status">Trạng thái: Trống</span>
+                <span
+                  >Trạng thái: <span class="table__status">Trống</span>
+                </span>
               </div>
               <button class="table__start">Start</button>
             </div>
@@ -109,7 +115,7 @@
         <form id="add-table-form">
           <h2>Thêm bàn mới</h2>
 
-          <label for="table-nam">Tên bàn:</label>
+          <label for="table-name">Tên bàn:</label>
           <input type="text" id="table-name" placeholder="VD: Bàn 1" />
 
           <label for="table-type">Loại bàn:</label>

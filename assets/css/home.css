@@ -39,6 +39,8 @@ body {
 .header-left {
   font-size: 2.5rem;
   font-weight: 700;
+  text-decoration: none;
+  color: #fff;
 }
 
 .header-right {
@@ -205,7 +207,7 @@ body {
   color: #4a55a2;
 }
 
-/* ================Table============== */
+/* ================nút thêm bàn============== */
 .add-table {
   margin-bottom: 20px;
 }
@@ -213,7 +215,7 @@ body {
 .plus {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   border: 1px solid #a6a9b6;
   background-color: #eef2ff;
   border-radius: 12px;
@@ -235,12 +237,167 @@ body {
 }
 
 .plus span {
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: 500;
   color: #333;
 }
 
-/* ============Thêm bàn mới============== */
+/* ============table body============== */
+.table__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.table {
+  display: flex;
+  flex-direction: column;
+  min-height: 220px;
+  padding: 20px;
+  background-color: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+  border-left: 5px solid #68d391;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.table:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+}
+
+.table__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 13px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.table__menu {
+  position: relative;
+}
+
+.table__toggle {
+  display: flex;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.table__toggle:hover {
+  background-color: #f1f3f4;
+}
+
+.table__toggle img {
+  width: 20px;
+  height: 20px;
+  /* opacity: 0.5; */
+}
+
+.table__drop {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 100%;
+
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 150px;
+  padding: 8px;
+  z-index: 10;
+  border: 1px solid #e3e3e3;
+}
+
+.table__delete {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 1.1rem;
+  color: #e53e3e;
+  font-weight: 400;
+}
+
+.table__delete img {
+  width: 16px;
+  height: 16px;
+}
+
+.table__delete:hover {
+  background-color: #fef2f2;
+}
+
+.table__edit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 1.1rem;
+  color: #555;
+  font-weight: 400;
+}
+
+.table__edit img {
+  width: 16px;
+  height: 16px;
+}
+
+.table__edit:hover {
+  background-color: #f1f3f4;
+}
+
+.table__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 1.3rem;
+  color: #555;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.table__status {
+  font-weight: 500;
+  color: #4ea376;
+}
+
+.table__start {
+  margin-top: auto;
+  color: #fff;
+  background-color: #68d391;
+  font-size: 1.4rem;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 8px;
+  padding: 11px 0;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.table__start:hover {
+  background-color: #48bb78;
+}
+
+.table__start:active {
+  transform: scale(0.95);
+}
+
+.table__title {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
 .table-modal {
   display: none;
   position: fixed;
@@ -259,6 +416,37 @@ body {
   display: flex;
 }
 
+.table__menu.active .table__drop {
+  display: block;
+}
+
+.table__menu.active .table__toggle {
+  border: 1px solid #333;
+}
+
+/* ======================đổi trạng thái============= */
+.table.table__playing {
+  border-color: #ff6b6b;
+  background-color: #fff5f5;
+}
+
+.table.table__playing .table__start {
+  background-color: #ff6b6b;
+}
+
+.table.table__playing .table__status {
+  color: #ff6b6b;
+}
+
+.table.table__playing .table__start:hover {
+  background-color: #ff6b6b;
+}
+
+.table.table__playing .table__start {
+  color: #fff;
+}
+
+/* =====================thêm bàn mới===================== */
 .modal__content {
   background-color: #fff;
   padding: 20px 30px;
