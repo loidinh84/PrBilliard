@@ -9,7 +9,17 @@ const elements = {
   tableName: document.getElementById("table-name"),
   tableType: document.getElementById("table-type"),
   tableList: document.querySelector(".table__list"),
+  playingCount: document.getElementById("section__playing"),
+  tablesCount: document.getElementById("section__tables"),
+  deleteModal: document.getElementById("delete-confirm"),
+  deleteCancel: document.getElementById("btn__cancel__delete"),
+  deleteSubmit: document.getElementById("btn__confirm__delete"),
+  deleteTableName: document.getElementById("delete__table"),
 };
+
+let currentPlaying = 0;
+let currentTables = 0;
+let tableDelete = null;
 
 // ==================== Utility Functions ====================
 function formatTime(countTime) {
@@ -66,6 +76,9 @@ function handleTimer(tableContainer, startButton, statusText, timeCount) {
     startButton.textContent = "Stop";
     statusText.textContent = "Đang chơi";
 
+    currentPlaying++;
+    elements.playingCount.textContent = currentPlaying;
+
     let second = 0;
 
     tableContainer.timerID = setInterval(() => {
@@ -76,6 +89,9 @@ function handleTimer(tableContainer, startButton, statusText, timeCount) {
     startButton.textContent = "Start";
     statusText.textContent = "Trống";
     clearInterval(tableContainer.timerID);
+
+    currentPlaying--;
+    elements.playingCount.textContent = currentPlaying;
   }
 }
 
@@ -113,9 +129,33 @@ elements.addTableForm.addEventListener("submit", (e) => {
   elements.tableList.append(newTable);
   elements.modal.classList.remove("active");
 
+  currentTables++;
+  elements.tablesCount.textContent = currentTables;
+
   // Reset form
   elements.tableName.value = "";
   elements.tableType.value = "";
+});
+
+// Button cancel confirm delete table
+elements.deleteCancel.addEventListener("click", () => {
+  elements.deleteModal.classList.remove("active");
+  tableDelete = null;
+});
+
+// Button submit confirm delete table
+elements.deleteSubmit.addEventListener("click", () => {
+  if (tableDelete) {
+    if (tableDelete.classList.contains("table__playing")) {
+      currentPlaying--;
+      elements.playingCount.textContent = currentPlaying;
+    }
+    currentTables--;
+    elements.tablesCount.textContent = currentTables;
+    tableDelete.remove();
+    elements.deleteModal.classList.remove("active");
+    tableDelete = null;
+  }
 });
 
 // Table list event delegation
@@ -140,6 +180,15 @@ elements.tableList.addEventListener("click", (e) => {
     const timeCount = table.querySelector(".table__timer");
 
     handleTimer(table, startButton, statusText, timeCount);
+  }
+
+  // Delete tables
+  const deleteButton = e.target.closest(".table__delete");
+  if (deleteButton) {
+    tableDelete = deleteButton.closest(".table");
+    const tableName = tableDelete.querySelector(".table__title").textContent;
+    elements.deleteTableName.textContent = `${tableName}`;
+    elements.deleteModal.classList.add("active");
   }
 });
 

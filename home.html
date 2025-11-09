@@ -55,6 +55,7 @@
         </div>
       </header>
       <main class="main">
+        <!-- Thống kê -->
         <section class="section-summary">
           <div class="section__card">
             <span>Doanh thu hôm nay</span>
@@ -62,7 +63,11 @@
           </div>
           <div class="section__card">
             <span>Số bàn đang mở</span>
-            <strong>0/4</strong>
+            <strong>
+              <span id="section__playing">0</span>
+              /
+              <span id="section__tables">0</span>
+            </strong>
           </div>
         </section>
 
@@ -74,39 +79,7 @@
               <span>Thêm bàn</span>
             </button>
           </div>
-          <div class="table__list">
-            <!-- table card -->
-            <div class="table">
-              <!-- Header card -->
-              <div class="table__header">
-                <h3 class="table__title">Bàn 1</h3>
-                <div class="table__menu" id="table__menu-1">
-                  <button class="table__toggle">
-                    <img src="./assets/icon/3dot.svg" alt="Menu" />
-                  </button>
-                  <div class="table__drop">
-                    <a href="#" class="table__edit"
-                      ><img src="./assets/icon/edit.svg" alt="Edit" />Edit</a
-                    >
-                    <a href="#" class="table__delete">
-                      <img src="./assets/icon/delete.svg" alt="Delete" />Delete
-                    </a>
-                  </div>
-                </div>
-              </div>
-              <!-- body card -->
-              <div class="table__body">
-                <span
-                  >Giờ chơi: <span class="table__timer"> 00:00:00 </span></span
-                >
-                <span>Loại bàn: Lỗ</span>
-                <span
-                  >Trạng thái: <span class="table__status">Trống</span>
-                </span>
-              </div>
-              <button class="table__start">Start</button>
-            </div>
-          </div>
+          <div class="table__list"></div>
         </section>
       </main>
     </div>
@@ -128,6 +101,22 @@
             <button type="submit" class="btn-submit">Thêm</button>
           </div>
         </form>
+      </div>
+    </div>
+    <div class="table-modal" id="delete-confirm">
+      <div class="modal__content">
+        <h2>Xác nhận xóa</h2>
+        <p>
+          Bạn có chắc chắn muốn xóa <strong id="delete__table"></strong> không?
+        </p>
+        <div class="confirm__action">
+          <button type="button" class="btn-cancel" id="btn__cancel__delete">
+            Hủy
+          </button>
+          <button type="button" class="btn-submit" id="btn__confirm__delete">
+            Xóa
+          </button>
+        </div>
       </div>
     </div>
     <script src="./assets/js/home.js"></script>

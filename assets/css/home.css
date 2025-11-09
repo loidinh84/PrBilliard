@@ -193,7 +193,7 @@ body {
   border-radius: 20px;
 }
 
-.section__card span {
+.section__card > span {
   display: block;
   font-size: 1.5rem;
   color: #3f3f46;
@@ -201,7 +201,6 @@ body {
 }
 
 .section__card strong {
-  display: block;
   font-size: 2rem;
   font-weight: 700;
   color: #4a55a2;
@@ -398,24 +397,6 @@ body {
   font-weight: 700;
 }
 
-.table-modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.25);
-
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.table-modal.active {
-  display: flex;
-}
-
 .table__menu.active .table__drop {
   display: block;
 }
@@ -447,6 +428,24 @@ body {
 }
 
 /* =====================thêm bàn mới===================== */
+.table-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.25);
+
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.table-modal.active {
+  display: flex;
+}
+
 .modal__content {
   background-color: #fff;
   padding: 20px 30px;
@@ -514,4 +513,45 @@ body {
 
 .btn-submit:hover {
   background-color: #5a67b6;
+}
+/* =================Xóa bàn=========== */
+.btn-submit {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2 ease;
+  background-color: #e53e3e;
+  color: #fff;
+  border: 1px solid #e53e3e;
+}
+
+.btn-submit:hover {
+  background-color: #c53030;
+}
+
+.btn-cancel {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2 ease;
+  background-color: #eee;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.confirm__action {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  gap: 10px;
+  margin-top: 10px;
 }
