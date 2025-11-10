@@ -515,7 +515,7 @@ body {
   background-color: #5a67b6;
 }
 /* =================Xóa bàn=========== */
-.btn-submit {
+.btn-delete {
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
@@ -527,7 +527,7 @@ body {
   border: 1px solid #e53e3e;
 }
 
-.btn-submit:hover {
+.btn-delete:hover {
   background-color: #c53030;
 }
 
@@ -543,15 +543,3 @@ body {
   border: 1px solid #ddd;
 }
 
-.confirm__action {
-  display: flex;
-  justify-content: flex-end;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  gap: 10px;
-  margin-top: 10px;
-}

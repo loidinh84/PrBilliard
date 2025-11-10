@@ -15,11 +15,14 @@ const elements = {
   deleteCancel: document.getElementById("btn__cancel__delete"),
   deleteSubmit: document.getElementById("btn__confirm__delete"),
   deleteTableName: document.getElementById("delete__table"),
+  modalTitle: document.getElementById("modal-title"),
+  modalUpdate: document.getElementById("modal-update"),
 };
 
 let currentPlaying = 0;
 let currentTables = 0;
 let tableDelete = null;
+let tableUpdate = null;
 
 // ==================== Utility Functions ====================
 function formatTime(countTime) {
@@ -61,7 +64,7 @@ function createTableHTML(name, type) {
     </div>
     <div class="table__body">
       <span>Giờ chơi: <span class="table__timer">00:00:00</span></span>
-      <span>Loại bàn: ${type}</span>
+      <span class="table__type">Loại bàn: ${type}</span>
       <span>Trạng thái: <span class="table__status">Trống</span></span>
     </div>
     <button class="table__start">Start</button>
@@ -105,7 +108,13 @@ elements.menuToggle.addEventListener("click", (e) => {
 
 // Modal handlers
 elements.addBtn.addEventListener("click", () => {
-  elements.modal.classList.toggle("active");
+  tableUpdate = null;
+  elements.modalTitle.textContent = "Thêm bàn mới";
+  elements.modalUpdate.textContent = "Thêm";
+  elements.tableName.value = "";
+  elements.tableType.value = "";
+
+  elements.modal.classList.add("active");
 });
 
 elements.cancelBtn.addEventListener("click", () => {
@@ -119,22 +128,36 @@ elements.addTableForm.addEventListener("submit", (e) => {
   const name = elements.tableName.value;
   const type = elements.tableType.value;
 
-  console.log("Tên bàn đã nhập:", name);
-  console.log("Loại bàn đã nhập:", type);
+  if (tableUpdate) {
+    const titleElement = tableUpdate.querySelector(".table__title");
+    const typeElement = tableUpdate.querySelector(".table__type");
+    titleElement.textContent = name;
+    typeElement.textContent = `Loại bàn: ${type}`;
+  } else {
+    const table = document.createElement("div");
+    table.classList.add("table");
+    table.innerHTML = createTableHTML(name, type);
+    elements.tableList.append(table);
 
-  const newTable = document.createElement("div");
-  newTable.classList.add("table");
-  newTable.innerHTML = createTableHTML(name, type);
+    currentTables++;
+    elements.tablesCount.textContent = currentTables;
+  }
 
-  elements.tableList.append(newTable);
+  // console.log("Tên bàn đã nhập:", name);
+  // console.log("Loại bàn đã nhập:", type);
+
+  // const newTable = document.createElement("div");
+  // newTable.classList.add("table");
+  // newTable.innerHTML = createTableHTML(name, type);
+  // elements.tableList.append(newTable);
+
   elements.modal.classList.remove("active");
-
-  currentTables++;
-  elements.tablesCount.textContent = currentTables;
 
   // Reset form
   elements.tableName.value = "";
   elements.tableType.value = "";
+
+  tableUpdate = null;
 });
 
 // Button cancel confirm delete table
@@ -189,6 +212,23 @@ elements.tableList.addEventListener("click", (e) => {
     const tableName = tableDelete.querySelector(".table__title").textContent;
     elements.deleteTableName.textContent = `${tableName}`;
     elements.deleteModal.classList.add("active");
+  }
+
+  // Edit table
+  const editButton = e.target.closest(".table__edit");
+  if (editButton) {
+    tableUpdate = editButton.closest(".table");
+    const currentName = tableUpdate.querySelector(".table__title").textContent;
+    let currentTypeRaw = tableUpdate.querySelector(".table__type").textContent;
+    let currentType = currentTypeRaw.replace("Loại bàn: ", "");
+
+    elements.tableName.value = currentName;
+    elements.tableType.value = currentType;
+
+    elements.modalTitle.textContent = "Cập nhật bàn";
+    elements.modalUpdate.textContent = "Cập nhật";
+
+    elements.modal.classList.add("active");
   }
 });
 

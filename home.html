@@ -70,23 +70,32 @@
             </strong>
           </div>
         </section>
-
+        <!-- main action -->
         <section class="table-section">
           <!-- add table -->
-          <div class="add-table">
-            <button class="plus" id="add-table-plus">
-              <img src="./assets/icon/add.svg" alt="Plus" />
-              <span>Thêm bàn</span>
-            </button>
+          <div class="table-section-header">
+            <div class="add-table">
+              <button class="plus" id="add-table-plus">
+                <img src="./assets/icon/add.svg" alt="Plus" />
+                <span>Thêm bàn</span>
+              </button>
+            </div>
+            <div class="manage-menu">
+              <button class="manage-menu-btn" id="manage-menu-btn">
+                <img src="./assets/icon/mangage.svg" alt="Manage" />
+                <span>Quản lý Menu</span>
+              </button>
+            </div>
           </div>
           <div class="table__list"></div>
         </section>
       </main>
     </div>
+    <!-- create table -->
     <div class="table-modal" id="add-table-modal">
       <div class="modal__content">
         <form id="add-table-form">
-          <h2>Thêm bàn mới</h2>
+          <h2 id="modal-title">Thêm bàn mới</h2>
 
           <label for="table-name">Tên bàn:</label>
           <input type="text" id="table-name" placeholder="VD: Bàn 1" />
@@ -98,23 +107,94 @@
             <button type="button" class="btn-cancel" id="cancel-btn">
               Hủy
             </button>
-            <button type="submit" class="btn-submit">Thêm</button>
+            <button type="submit" class="btn-submit" id="modal-update">
+              Thêm
+            </button>
           </div>
         </form>
       </div>
     </div>
+    <!--delete table -->
     <div class="table-modal" id="delete-confirm">
       <div class="modal__content">
         <h2>Xác nhận xóa</h2>
         <p>
           Bạn có chắc chắn muốn xóa <strong id="delete__table"></strong> không?
         </p>
-        <div class="confirm__action">
+        <div class="modal__action">
           <button type="button" class="btn-cancel" id="btn__cancel__delete">
             Hủy
           </button>
-          <button type="button" class="btn-submit" id="btn__confirm__delete">
+          <button type="button" class="btn-delete" id="btn__confirm__delete">
             Xóa
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- manage Menu -->
+    <div class="table-modal" id="mangage-menu-modal">
+      <div class="modal__content modal__large">
+        <h2>Quản lý Menu</h2>
+        <button class="modal-close-btn" id="close-menu-modal">&times;</button>
+        <button class="btn-submit" id="add-item-btn">Thêm món mới</button>
+        <div class="menu-item-list" id="menu-item-list">
+          <h4>Phở bò</h4>
+          <span class="item-name">Món chính</span>
+          <span class="item-price">50.000đ</span>
+          <div class="menu-item-action">
+            <button class="btn-edit">Sửa</button>
+            <button class="btn-delete">Xóa</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- detail bill -->
+    <div class="table-modal" id="table-detail">
+      <div class="modal__content modal__xlarge">
+        <h2 id="detail-title">bàn 1</h2>
+        <button class="modal-close-btn" id="close-detail">&times;</button>
+        <div class="table-detail-layout">
+          <div class="detail__list">
+            <h3>Menu</h3>
+            <input type="text" placeholder="Tìm món..." />
+            <div class="menu__item">
+              <span>Phở bò</span>
+              <span class="item-price">50.000đ</span>
+              <button class="add-order-btn">+</button>
+            </div>
+          </div>
+          <div class="detail__list">
+            <h3>Đơn hàng</h3>
+            <div class="order-item">
+              <span>Phở bò</span>
+              <span class="item-price">50.000đ</span>
+              <button class="remove-order-btn">Xóa</button>
+            </div>
+            <div class="order-summary">
+              <div class="summary-line">
+                <span>Tổng giờ chơi:</span>
+                <span id="summary-time">00:00:00</span>
+              </div>
+              <div class="summary-line">
+                <span>Tổng món:</span>
+                <span id="summary-items">1</span>
+              </div>
+              <div class="summary-line total">
+                <strong>Tổng tiền:</strong>
+                <strong id="summary-price">50.000</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal__action">
+          <button type="button" class="btn-cancel" id="close-detail-btn">
+            Đóng
+          </button>
+          <button type="button" class="btn-move" id="move-table-btn">
+            Chuyển bàn
+          </button>
+          <button type="button" class="btn-delete" id="checkout-btn">
+            Thanh toán
           </button>
         </div>
       </div>
