@@ -100,7 +100,6 @@ body {
   color: #333;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  min-width: 220px;
   padding: 8px;
   z-index: 100;
 
@@ -206,8 +205,11 @@ body {
   color: #4a55a2;
 }
 
-/* ================nút thêm bàn============== */
-.add-table {
+/* ================nút thêm bàn và quản lý menu============== */
+.table-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
 }
 
@@ -239,6 +241,32 @@ body {
   font-size: 1.8rem;
   font-weight: 500;
   color: #333;
+}
+
+.manage-menu-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #4e58aa;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 1.4rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.manage-menu-btn img {
+  width: 20px;
+  height: 20px;
+  filter: invert(1);
+}
+
+.manage-menu-btn:hover {
+  background-color: #444f92;
+  transform: scale(1.01);
 }
 
 /* ============table body============== */
@@ -543,3 +571,248 @@ body {
   border: 1px solid #ddd;
 }
 
+/* ==============Menu================= */
+.hidden {
+  display: none !important;
+}
+
+.modal__header {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #eee;
+}
+
+.modal__header h2 {
+  margin: 5px;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 2.5rem;
+  cursor: pointer;
+  color: #555;
+  line-height: 1;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close-btn:hover {
+  color: #333;
+}
+
+.modal__large {
+  max-width: 800px;
+  width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.menu-toolbar {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.menu-toolbar label {
+  display: block;
+  font-size: 1.4rem;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #434343;
+}
+
+.menu-toolbar input {
+  width: 70%;
+  height: 40px;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1.4rem;
+  transition: border-color 0.3s;
+}
+
+.menu-toolbar input:focus {
+  outline: none;
+  border-color: #4a55a2;
+}
+
+#add-menu-modal {
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+.menu-item-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+  padding: 15px 0;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.menu-item-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background-color: #f9f9f9;
+  border: 2px solid #eee;
+  padding: 15px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease;
+  border-radius: 12px;
+  /* min-height: 180px; */
+}
+
+.menu-item-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  background-color: #f0f4ff;
+  border-color: #5a67b6;
+}
+
+.menu-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.menu-item-info h4 {
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.item-category {
+  display: inline-block;
+  width: fit-content;
+  font-size: 1.2rem;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.badge-food {
+  color: #2c7a7b;
+}
+.badge-drink {
+  color: #2b6cb0;
+}
+.badge-tobacco {
+  color: #c96c6c;
+}
+.badge-other {
+  color: #4a5568;
+}
+
+.menu-item-price {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #5a67b6;
+  margin: 5px 0;
+}
+
+.menu-item-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+  width: 100%;
+}
+
+.menu-item-actions .btn-icon {
+  width: auto;
+  height: auto;
+  padding: 6px 12px;
+  border-radius: 6px;
+  gap: 5px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #666666;
+}
+.btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  transition: background-color 0.3s ease;
+}
+
+.btn-icon img {
+  width: 18px;
+  height: 18px;
+}
+
+.btn-edit-item {
+  background-color: #edf2f7;
+  border: 1px solid #90caf9;
+}
+.btn-edit-item:hover {
+  background-color: #e2e8f0;
+  color: #333;
+}
+
+.btn-delete-item {
+  background-color: #fff5f5;
+  border: 1px solid #ef9a9a;
+}
+.btn-delete-item:hover {
+  background-color: #fbcbcb;
+  color: #333;
+}
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.group-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 5;
+}
+
+.group-menu label {
+  font-size: 1.3rem;
+  font-weight: 500;
+}
+
+.group-menu input,
+.group-menu select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1.4rem;
+}
+
+.group-menu input:focus,
+.group-menu select:focus {
+  outline: none;
+  border-color: #4a55a2;
+}
+
+.modal-select {
+  cursor: pointer;
+}

@@ -75,7 +75,7 @@
           <!-- add table -->
           <div class="table-section-header">
             <div class="add-table">
-              <button class="plus" id="add-table-plus">
+              <button type="button" class="plus" id="add-table-plus">
                 <img src="./assets/icon/add.svg" alt="Plus" />
                 <span>Thêm bàn</span>
               </button>
@@ -132,20 +132,21 @@
       </div>
     </div>
     <!-- manage Menu -->
-    <div class="table-modal" id="mangage-menu-modal">
+    <div class="table-modal" id="manage-menu-modal">
       <div class="modal__content modal__large">
-        <h2>Quản lý Menu</h2>
-        <button class="modal-close-btn" id="close-menu-modal">&times;</button>
-        <button class="btn-submit" id="add-item-btn">Thêm món mới</button>
-        <div class="menu-item-list" id="menu-item-list">
-          <h4>Phở bò</h4>
-          <span class="item-name">Món chính</span>
-          <span class="item-price">50.000đ</span>
-          <div class="menu-item-action">
-            <button class="btn-edit">Sửa</button>
-            <button class="btn-delete">Xóa</button>
-          </div>
+        <div class="modal__header">
+          <h2>Quản lý Menu</h2>
+          <button class="modal-close-btn" id="close-menu-modal">&times;</button>
         </div>
+        <div class="menu-toolbar">
+          <label for="search-menu">Món bạn cần tìm là:</label>
+          <input type="text" id="search-menu" placeholder="Nhập tên món..." />
+        </div>
+        <div class="modal__action">
+          <button class="btn-submit" id="open-add-menu">Thêm món</button>
+        </div>
+
+        <div class="menu-item-list grid-view" id="menu-item-list"></div>
       </div>
     </div>
     <!-- detail bill -->
@@ -156,7 +157,11 @@
         <div class="table-detail-layout">
           <div class="detail__list">
             <h3>Menu</h3>
-            <input type="text" placeholder="Tìm món..." />
+            <input
+              type="text"
+              placeholder="Tìm món..."
+              aria-label="Tìm kiếm món ăn"
+            />
             <div class="menu__item">
               <span>Phở bò</span>
               <span class="item-price">50.000đ</span>
@@ -197,6 +202,50 @@
             Thanh toán
           </button>
         </div>
+      </div>
+    </div>
+    <!-- Create item menu-->
+    <div class="table-modal" id="add-menu-modal">
+      <div class="modal__content">
+        <h2>Thêm món</h2>
+        <form id="add-menu" novalidate>
+          <div class="layout">
+            <div class="group-menu">
+              <label>Tên món:</label>
+              <input type="text" id="menu-name" placeholder="VD: Mì" required />
+            </div>
+            <div class="group-menu">
+              <label>Giá tiền:</label>
+              <input
+                type="number"
+                id="menu-price"
+                placeholder="VD: 1000"
+                required
+              />
+            </div>
+            <div class="group-menu">
+              <label for="menu-category">Loại:</label>
+              <select
+                name="menu-category"
+                class="modal-select"
+                id="menu-category"
+              >
+                <option value="food">Đồ ăn</option>
+                <option value="drink">Đồ uống</option>
+                <option value="tobacco">Thuốc lá</option>
+                <option value="other">Khác</option>
+              </select>
+            </div>
+            <div class="modal__action">
+              <button type="button" class="btn-cancel" id="cancel-add-menu">
+                Hủy
+              </button>
+              <button type="submit" class="btn-submit" id="add-item-btn">
+                Lưu
+              </button>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
     <script src="./assets/js/home.js"></script>

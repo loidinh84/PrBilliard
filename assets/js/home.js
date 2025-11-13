@@ -17,12 +17,210 @@ const elements = {
   deleteTableName: document.getElementById("delete__table"),
   modalTitle: document.getElementById("modal-title"),
   modalUpdate: document.getElementById("modal-update"),
+  // Menu
+  manageMenuBtn: document.getElementById("manage-menu-btn"),
+  manageMenuModal: document.getElementById("manage-menu-modal"),
+  closeMenuBtn: document.getElementById("close-menu-modal"),
+  openMenuBtn: document.getElementById("open-add-menu"),
+  addMenuForm: document.getElementById("add-menu"),
+  cancelAddMenu: document.getElementById("cancel-add-menu"),
+  menuNameInput: document.getElementById("menu-name"),
+  menuPriceInput: document.getElementById("menu-price"),
+  menuCategoryInput: document.getElementById("menu-category"),
+  menuItemList: document.getElementById("menu-item-list"),
+  searchInput: document.getElementById("search-menu"),
 };
 
 let currentPlaying = 0;
 let currentTables = 0;
 let tableDelete = null;
 let tableUpdate = null;
+let editItem = null;
+
+// Localstorage
+function saveMenu() {
+  localStorage.setItem("menuData", JSON.stringify(menuData));
+}
+
+function loadMenu() {
+  const saved = localStorage.getItem("menuData");
+  if (saved) {
+    menuData = JSON.parse(saved);
+  }
+}
+
+// Menu mẫu
+let menuData = [
+  { id: 1, name: "Cà phê đá", price: 25000, category: "drink" },
+  { id: 2, name: "Mì xào bò", price: 45000, category: "food" },
+  { id: 3, name: "Thuốc lá 555", price: 30000, category: "tobacco" },
+];
+
+// ==================== Search Menu ==========================
+elements.searchInput.addEventListener("input", (e) => {
+  const searchTerm = e.target.value.toLowerCase().trim();
+
+  const filterData = menuData.filter((item) =>
+    item.name.toLowerCase().includes(searchTerm)
+  );
+  renderMenu(filterData);
+});
+
+// ==================== Menu HTML ============================
+function renderMenu(dataRender = menuData) {
+  elements.menuItemList.innerHTML = "";
+
+  if (dataRender.length === 0) {
+    elements.menuItemList.innerHTML = `
+    <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;">
+        <div style="font-size: 40px;">🔍</div>
+        <div style="font-size: 1.4rem; margin-top: 10px;">Không tìm thấy món nào</div>
+      </div>
+    `;
+    return;
+  }
+
+  dataRender.forEach((item) => {
+    let badgeClass = "badge-other";
+    let categoryName = "Khác";
+
+    if (item.category === "food") {
+      badgeClass = "badge-food";
+      categoryName = "Đồ ăn";
+    } else if (item.category === "drink") {
+      badgeClass = "badge-drink";
+      categoryName = "Đồ uống";
+    } else if (item.category === "tobacco") {
+      badgeClass = "badge-tobacco";
+      categoryName = "Thuốc lá";
+    }
+    const formattedPrice = new Intl.NumberFormat("vi-VN").format(item.price);
+    const itemHTML = `
+    <div class="menu-item-card">
+        <div class="menu-item-info">
+          <h4>${item.name}</h4>
+          <span class="item-category-badge ${badgeClass}">${categoryName}</span>
+        </div>        
+        <div class="menu-item-price">${formattedPrice}đ</div>       
+        <div class="menu-item-actions">
+          <button class="btn-icon btn-edit-item" data-id="${item.id}" title="Sửa"> Sửa
+            <img src="./assets/icon/edit.svg" alt="Sửa">
+          </button>
+          <button class="btn-icon btn-delete-item" data-id="${item.id}" title="Xóa"> Xóa
+            <img src="./assets/icon/delete.svg" alt="Xóa">
+          </button>
+        </div>
+      </div>`;
+
+    elements.menuItemList.insertAdjacentHTML("beforeend", itemHTML);
+  });
+}
+
+// ==================== Handlers Menu ========================
+
+elements.manageMenuBtn.addEventListener("click", () => {
+  renderMenu();
+  elements.manageMenuModal.classList.add("active");
+});
+
+elements.closeMenuBtn.addEventListener("click", () => {
+  elements.manageMenuModal.classList.remove("active");
+
+  // elements.addMenuForm.classList.add("hidden");
+  // elements.openMenuBtn.style.display = "block";
+});
+
+elements.openMenuBtn.addEventListener("click", () => {
+  editingItemId = null;
+  document.querySelector("#add-menu-modal h2").textContent = "Thêm món";
+  elements.menuNameInput.value = "";
+  elements.menuPriceInput.value = "";
+  elements.menuCategoryInput.value = "food";
+
+  document.getElementById("add-menu-modal").classList.add("active");
+});
+
+elements.cancelAddMenu.addEventListener("click", () => {
+  document.getElementById("add-menu-modal").classList.remove("active");
+  editItem = null;
+});
+
+elements.addMenuForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const name = elements.menuNameInput.value.trim();
+  const price = Number(elements.menuPriceInput.value);
+  const category = elements.menuCategoryInput.value;
+
+  if (!name) {
+    alert("Vui lòng nhập tên món!");
+    elements.menuNameInput.focus();
+    return;
+  }
+
+  if (!price || price < 0) {
+    alert("Giá tiền không hợp lệ!");
+    elements.menuPriceInput.focus();
+    return;
+  }
+
+  if (editItem) {
+    const item = menuData.find((m) => m.id === editItem);
+    if (item) {
+      item.name = name;
+      item.price = price;
+      item.category = category;
+    }
+  } else {
+    const newItem = {
+      id: Date.now(),
+      name: name,
+      price: price,
+      category: category,
+    };
+    menuData.push(newItem);
+  }
+  saveMenu();
+  renderMenu();
+  document.getElementById("add-menu-modal").classList.remove("active");
+
+  editItem = null;
+});
+
+// Delete/Edit item
+elements.menuItemList.addEventListener("click", (e) => {
+  // Edit
+  const editBtn = e.target.closest(".btn-edit-item");
+  if (editBtn) {
+    const idItem = Number(editBtn.dataset.id);
+    const item = menuData.find((m) => m.id === idItem);
+
+    if (item) {
+      editItem = item.id;
+      document.querySelector("#add-menu-modal h2").textContent = "Sửa món";
+      elements.menuNameInput.value = item.name;
+      elements.menuPriceInput.value = item.price;
+      elements.menuCategoryInput.value = item.category;
+
+      document.getElementById("add-menu-modal").classList.add("active");
+    }
+    return;
+  }
+
+  // Delete
+  const deleteBtn = e.target.closest(".btn-delete-item");
+  if (deleteBtn) {
+    const idDelete = Number(deleteBtn.dataset.id);
+    const itemToDelete = menuData.find((m) => m.id === idDelete);
+
+    if (confirm(`Bạn chắc chắn muốn xóa "${itemToDelete.name}"?`)) {
+      menuData = menuData.filter((item) => item.id !== idDelete);
+      saveMenuToStorage();
+      renderMenu();
+    }
+  }
+});
+
+loadMenu();
 
 // ==================== Utility Functions ====================
 function formatTime(countTime) {
