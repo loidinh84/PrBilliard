@@ -29,6 +29,18 @@ const elements = {
   menuCategoryInput: document.getElementById("menu-category"),
   menuItemList: document.getElementById("menu-item-list"),
   searchInput: document.getElementById("search-menu"),
+  // Detail bill
+  tableDetails: document.getElementById("table-detail"),
+  closeDetailBtn: document.getElementById("close-detail"),
+  detailsTableTitle: document.getElementById("detail-title"),
+  detailsMenu: document.getElementById("details-menu-container"),
+  detailsOrder: document.getElementById("details-order-container"),
+  summaryTime: document.getElementById("summary-time"),
+  summaryItems: document.getElementById("summary-items"),
+  summaryPrice: document.getElementById("summary-price"),
+  discountBtn: document.getElementById("discount-btn"),
+  moveTableBtn: document.getElementById("move-table-btn"),
+  checkoutBtn: document.getElementById("checkout-btn"),
 };
 
 let currentPlaying = 0;
@@ -36,18 +48,8 @@ let currentTables = 0;
 let tableDelete = null;
 let tableUpdate = null;
 let editItem = null;
-
-// Localstorage
-function saveMenu() {
-  localStorage.setItem("menuData", JSON.stringify(menuData));
-}
-
-function loadMenu() {
-  const saved = localStorage.getItem("menuData");
-  if (saved) {
-    menuData = JSON.parse(saved);
-  }
-}
+let currentTableID = null;
+let tableMeals = {};
 
 // Menu mẫu
 let menuData = [
@@ -56,14 +58,149 @@ let menuData = [
   { id: 3, name: "Thuốc lá 555", price: 30000, category: "tobacco" },
 ];
 
-// ==================== Search Menu ==========================
-elements.searchInput.addEventListener("input", (e) => {
-  const searchTerm = e.target.value.toLowerCase().trim();
+// ==================== Details Menu HTML ============================
+function renderDetailsMenu(dataRender = menuData) {
+  const menuContainer = elements.detailsMenu;
+  menuContainer.innerHTML = "";
 
-  const filterData = menuData.filter((item) =>
-    item.name.toLowerCase().includes(searchTerm)
+  dataRender.forEach((item) => {
+    const formattedPrice = new Intl.NumberFormat("vi-VN").format(item.price);
+    const itemHTML = `
+    <div class="menu__item" data-id="${item.id}" oneclick="addOrder(${item.id})">
+      <div class="menu-item-info">
+        <h4 class="item-name">${item.name}</h4>
+        <span class="item-price">${formattedPrice}đ</span>
+      </div>
+      <button class="add-order-btn" data-id="${item.id}">
+        <img src="./assets/icon/add.svg" alt="+" /> 
+        </button>
+    </div>`;
+    menuContainer.insertAdjacentHTML("beforeend", itemHTML);
+  });
+}
+
+// ==================== Render Order Items ============================
+function renderOrderItems() {
+  const ordersContainer = elements.detailsOrder;
+  if (
+    !currentTableID ||
+    !tableMeals[currentTableID] ||
+    tableMeals[currentTableID].length === 0
+  ) {
+    elements.detailsOrder.innerHTML = `
+      <p style="text-align: center; padding: 40px; color: #999;">Chưa có món nào!</p>
+    `;
+    elements.summaryItems.textContent = 0;
+    elements.summaryPrice.textContent = "0đ";
+    return;
+  }
+
+  const orders = tableMeals[currentTableID];
+  let html = "";
+  let totalPrice = 0;
+
+  orders.forEach((order) => {
+    const itemTotal = order.price * order.quantity;
+    totalPrice += itemTotal;
+    const formattedPrice = new Intl.NumberFormat("vi-VN").format(itemTotal);
+
+    html += `
+      <div class="order__item" data-order-id="${order.id}">
+        <div class="order-info">
+          <span class="order-name">${order.name}</span>
+          <span class="order-quantity">SL: <strong>${order.quantity}</strong></span>
+        </div>
+        
+        <div class="order-action">
+          <span class="order-price">${formattedPrice}đ</span>
+          <button class="remove-order-btn" data-order-id="${order.id}" title="Giảm số lượng">
+            <img src="./assets/icon/minus.svg" alt="-" style="width: 12px;"> 
+            </button>
+        </div>
+      </div>
+    `;
+  });
+
+  ordersContainer.innerHTML = html;
+  elements.summaryItems.textContent = orders.reduce(
+    (sum, order) => sum + order.quantity,
+    0
   );
-  renderMenu(filterData);
+  elements.summaryPrice.textContent =
+    new Intl.NumberFormat("vi-VN").format(totalPrice) + "đ";
+}
+
+// ==================== Open Table Details ============================
+function openTableDetails(tableElement) {
+  const tableHeader = tableElement.querySelector(".table__header");
+  currentTableID = tableHeader.dataset.id;
+
+  const tableTitle = tableElement.querySelector(".table__title").textContent;
+  const tableTime = tableElement.querySelector(".table__timer").textContent;
+
+  elements.detailsTableTitle.textContent = `${tableTitle} - Chi tiết`;
+  elements.summaryTime.textContent = tableTime;
+
+  if (!tableMeals[currentTableID]) {
+    tableMeals[currentTableID] = [];
+  }
+
+  renderDetailsMenu();
+  renderOrderItems();
+
+  elements.tableDetails.classList.add("active");
+}
+
+// ==================== Add Order Handler ============================
+elements.detailsMenu.addEventListener("click", (e) => {
+  const addBtn = e.target.closest(".add-order-btn");
+  if (addBtn) {
+    const itemId = Number(addBtn.dataset.id);
+    const menuItem = menuData.find((item) => item.id === itemId);
+
+    if (menuItem && currentTableID) {
+      const existingOrder = tableMeals[currentTableID].find(
+        (order) => order.id === itemId
+      );
+
+      if (existingOrder) {
+        existingOrder.quantity++;
+      } else {
+        tableMeals[currentTableID].push({
+          id: menuItem.id,
+          name: menuItem.name,
+          price: menuItem.price,
+          quantity: 1,
+        });
+      }
+
+      renderOrderItems();
+    }
+  }
+});
+
+// ==================== Remove Order Handler ============================
+elements.detailsOrder.addEventListener("click", (e) => {
+  const removeBtn = e.target.closest(".remove-order-btn");
+  if (removeBtn) {
+    const orderId = Number(removeBtn.dataset.orderId);
+
+    if (currentTableID && tableMeals[currentTableID]) {
+      const orderIndex = tableMeals[currentTableID].findIndex(
+        (order) => order.id === orderId
+      );
+
+      if (orderIndex !== -1) {
+        if (tableMeals[currentTableID][orderIndex].quantity > 1) {
+          tableMeals[currentTableID][orderIndex].quantity--;
+        } else {
+          tableMeals[currentTableID].splice(orderIndex, 1);
+        }
+
+        renderOrderItems();
+      }
+    }
+  }
 });
 
 // ==================== Menu HTML ============================
@@ -116,8 +253,28 @@ function renderMenu(dataRender = menuData) {
   });
 }
 
-// ==================== Handlers Menu ========================
+// ==================== Search Menu ==========================
+elements.searchInput.addEventListener("input", (e) => {
+  const searchTerm = e.target.value.toLowerCase().trim();
+  const filterData = menuData.filter((item) =>
+    item.name.toLowerCase().includes(searchTerm)
+  );
+  renderMenu(filterData);
+});
 
+// Localstorage
+function saveMenu() {
+  localStorage.setItem("menuData", JSON.stringify(menuData));
+}
+
+function loadMenu() {
+  const saved = localStorage.getItem("menuData");
+  if (saved) {
+    menuData = JSON.parse(saved);
+  }
+}
+
+// ==================== Handlers Menu ========================
 elements.manageMenuBtn.addEventListener("click", () => {
   renderMenu();
   elements.manageMenuModal.classList.add("active");
@@ -125,18 +282,14 @@ elements.manageMenuBtn.addEventListener("click", () => {
 
 elements.closeMenuBtn.addEventListener("click", () => {
   elements.manageMenuModal.classList.remove("active");
-
-  // elements.addMenuForm.classList.add("hidden");
-  // elements.openMenuBtn.style.display = "block";
 });
 
 elements.openMenuBtn.addEventListener("click", () => {
-  editingItemId = null;
+  editItem = null;
   document.querySelector("#add-menu-modal h2").textContent = "Thêm món";
   elements.menuNameInput.value = "";
   elements.menuPriceInput.value = "";
   elements.menuCategoryInput.value = "food";
-
   document.getElementById("add-menu-modal").classList.add("active");
 });
 
@@ -182,7 +335,6 @@ elements.addMenuForm.addEventListener("submit", (e) => {
   saveMenu();
   renderMenu();
   document.getElementById("add-menu-modal").classList.remove("active");
-
   editItem = null;
 });
 
@@ -200,7 +352,6 @@ elements.menuItemList.addEventListener("click", (e) => {
       elements.menuNameInput.value = item.name;
       elements.menuPriceInput.value = item.price;
       elements.menuCategoryInput.value = item.category;
-
       document.getElementById("add-menu-modal").classList.add("active");
     }
     return;
@@ -214,7 +365,7 @@ elements.menuItemList.addEventListener("click", (e) => {
 
     if (confirm(`Bạn chắc chắn muốn xóa "${itemToDelete.name}"?`)) {
       menuData = menuData.filter((item) => item.id !== idDelete);
-      saveMenuToStorage();
+      saveMenu();
       renderMenu();
     }
   }
@@ -243,8 +394,10 @@ function closeAllMenu(currentMenu = null) {
 
 // ==================== Table HTML Template ====================
 function createTableHTML(name, type) {
+  const tableID = Date.now();
+
   return `
-    <div class="table__header">
+    <div class="table__header" data-id="${tableID}">
       <h3 class="table__title">${name}</h3>
       <div class="table__menu">
         <button class="table__toggle">
@@ -311,7 +464,6 @@ elements.addBtn.addEventListener("click", () => {
   elements.modalUpdate.textContent = "Thêm";
   elements.tableName.value = "";
   elements.tableType.value = "";
-
   elements.modal.classList.add("active");
 });
 
@@ -335,26 +487,16 @@ elements.addTableForm.addEventListener("submit", (e) => {
     const table = document.createElement("div");
     table.classList.add("table");
     table.innerHTML = createTableHTML(name, type);
+
     elements.tableList.append(table);
 
     currentTables++;
     elements.tablesCount.textContent = currentTables;
   }
 
-  // console.log("Tên bàn đã nhập:", name);
-  // console.log("Loại bàn đã nhập:", type);
-
-  // const newTable = document.createElement("div");
-  // newTable.classList.add("table");
-  // newTable.innerHTML = createTableHTML(name, type);
-  // elements.tableList.append(newTable);
-
   elements.modal.classList.remove("active");
-
-  // Reset form
   elements.tableName.value = "";
   elements.tableType.value = "";
-
   tableUpdate = null;
 });
 
@@ -386,7 +528,6 @@ elements.tableList.addEventListener("click", (e) => {
   if (toggleButton) {
     e.stopPropagation();
     elements.menuContainer.classList.remove("active");
-
     const tableMenu = toggleButton.closest(".table__menu");
     closeAllMenu(tableMenu);
     tableMenu.classList.toggle("active");
@@ -399,22 +540,25 @@ elements.tableList.addEventListener("click", (e) => {
     const table = startButton.closest(".table");
     const statusText = table.querySelector(".table__status");
     const timeCount = table.querySelector(".table__timer");
-
     handleTimer(table, startButton, statusText, timeCount);
+    return;
   }
 
   // Delete tables
   const deleteButton = e.target.closest(".table__delete");
   if (deleteButton) {
+    e.preventDefault();
     tableDelete = deleteButton.closest(".table");
     const tableName = tableDelete.querySelector(".table__title").textContent;
     elements.deleteTableName.textContent = `${tableName}`;
     elements.deleteModal.classList.add("active");
+    return;
   }
 
   // Edit table
   const editButton = e.target.closest(".table__edit");
   if (editButton) {
+    e.preventDefault();
     tableUpdate = editButton.closest(".table");
     const currentName = tableUpdate.querySelector(".table__title").textContent;
     let currentTypeRaw = tableUpdate.querySelector(".table__type").textContent;
@@ -422,12 +566,23 @@ elements.tableList.addEventListener("click", (e) => {
 
     elements.tableName.value = currentName;
     elements.tableType.value = currentType;
-
     elements.modalTitle.textContent = "Cập nhật bàn";
     elements.modalUpdate.textContent = "Cập nhật";
-
     elements.modal.classList.add("active");
+    return;
   }
+
+  // Open table details - Click anywhere on table card
+  const clickedTable = e.target.closest(".table");
+  if (clickedTable) {
+    openTableDetails(clickedTable);
+  }
+});
+
+// Close detail bill
+elements.closeDetailBtn.addEventListener("click", () => {
+  elements.tableDetails.classList.remove("active");
+  currentTableID = null;
 });
 
 // Close menus when clicking outside

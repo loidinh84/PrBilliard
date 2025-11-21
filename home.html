@@ -152,8 +152,10 @@
     <!-- detail bill -->
     <div class="table-modal" id="table-detail">
       <div class="modal__content modal__xlarge">
-        <h2 id="detail-title">bàn 1</h2>
-        <button class="modal-close-btn" id="close-detail">&times;</button>
+        <div class="table-detail__header">
+          <h2 id="detail-title">bàn 1</h2>
+          <button class="modal-close-btn" id="close-detail">&times;</button>
+        </div>
         <div class="table-detail-layout">
           <div class="detail__list">
             <h3>Menu</h3>
@@ -162,19 +164,11 @@
               placeholder="Tìm món..."
               aria-label="Tìm kiếm món ăn"
             />
-            <div class="menu__item">
-              <span>Phở bò</span>
-              <span class="item-price">50.000đ</span>
-              <button class="add-order-btn">+</button>
-            </div>
+            <div id="details-menu-container"></div>
           </div>
           <div class="detail__list">
             <h3>Đơn hàng</h3>
-            <div class="order-item">
-              <span>Phở bò</span>
-              <span class="item-price">50.000đ</span>
-              <button class="remove-order-btn">Xóa</button>
-            </div>
+            <div id="details-order-container"></div>
             <div class="order-summary">
               <div class="summary-line">
                 <span>Tổng giờ chơi:</span>
@@ -192,8 +186,8 @@
           </div>
         </div>
         <div class="modal__action">
-          <button type="button" class="btn-cancel" id="close-detail-btn">
-            Đóng
+          <button type="button" class="btn-discount" id="discount-btn">
+            Giảm Giá
           </button>
           <button type="button" class="btn-move" id="move-table-btn">
             Chuyển bàn
