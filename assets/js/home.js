@@ -36,11 +36,15 @@ const elements = {
   detailsMenu: document.getElementById("details-menu-container"),
   detailsOrder: document.getElementById("details-order-container"),
   summaryTime: document.getElementById("summary-time"),
+  summaryStartTime: document.getElementById("summary-start-time"),
   summaryItems: document.getElementById("summary-items"),
   summaryPrice: document.getElementById("summary-price"),
   discountBtn: document.getElementById("discount-btn"),
   moveTableBtn: document.getElementById("move-table-btn"),
   checkoutBtn: document.getElementById("checkout-btn"),
+  startStopBtn: document.getElementById("start-stop-btn"),
+  menuCategoryFilter: document.getElementById("menu-category-filter"),
+  searchMenuDetail: document.getElementById("search-menu-detail"),
 };
 
 let currentPlaying = 0;
@@ -50,12 +54,17 @@ let tableUpdate = null;
 let editItem = null;
 let currentTableID = null;
 let tableMeals = {};
+let tableStartTimes = {};
+let selectedCategory = "all";
+let itemDeleteID = null;
 
 // Menu mẫu
 let menuData = [
   { id: 1, name: "Cà phê đá", price: 25000, category: "drink" },
   { id: 2, name: "Mì xào bò", price: 45000, category: "food" },
   { id: 3, name: "Thuốc lá 555", price: 30000, category: "tobacco" },
+  { id: 4, name: "Bàn Lỗ - 1 giờ", price: 50000, category: "table" },
+  { id: 5, name: "Bàn Phăng - 1 giờ", price: 60000, category: "table" },
 ];
 
 // ==================== Details Menu HTML ============================
@@ -63,17 +72,47 @@ function renderDetailsMenu(dataRender = menuData) {
   const menuContainer = elements.detailsMenu;
   menuContainer.innerHTML = "";
 
-  dataRender.forEach((item) => {
+  // Lọc theo category
+  let filteredData = dataRender;
+  if (selectedCategory !== "all") {
+    filteredData = dataRender.filter(
+      (item) => item.category === selectedCategory
+    );
+  }
+
+  // Lọc theo search
+  const searchTerm =
+    elements.searchMenuDetail?.value.toLowerCase().trim() || "";
+  if (searchTerm) {
+    filteredData = filteredData.filter((item) =>
+      item.name.toLowerCase().includes(searchTerm)
+    );
+  }
+
+  if (filteredData.length === 0) {
+    menuContainer.innerHTML = `
+      <div class="empty-menu">
+        <div class="empty-icon">🔍</div>
+        <p>Không tìm thấy món nào</p>
+      </div>
+    `;
+    return;
+  }
+
+  filteredData.forEach((item) => {
     const formattedPrice = new Intl.NumberFormat("vi-VN").format(item.price);
+
     const itemHTML = `
-    <div class="menu__item" data-id="${item.id}" oneclick="addOrder(${item.id})">
+    <div class="menu__item" data-id="${item.id}">
       <div class="menu-item-info">
-        <h4 class="item-name">${item.name}</h4>
-        <span class="item-price">${formattedPrice}đ</span>
+        <span class="menu-item-name">${item.name}</span>
+        <span class="menu-item-price">${formattedPrice}đ</span>
       </div>
       <button class="add-order-btn" data-id="${item.id}">
-        <img src="./assets/icon/add.svg" alt="+" /> 
-        </button>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
     </div>`;
     menuContainer.insertAdjacentHTML("beforeend", itemHTML);
   });
@@ -81,14 +120,16 @@ function renderDetailsMenu(dataRender = menuData) {
 
 // ==================== Render Order Items ============================
 function renderOrderItems() {
-  const ordersContainer = elements.detailsOrder;
   if (
     !currentTableID ||
     !tableMeals[currentTableID] ||
     tableMeals[currentTableID].length === 0
   ) {
     elements.detailsOrder.innerHTML = `
-      <p style="text-align: center; padding: 40px; color: #999;">Chưa có món nào!</p>
+      <div class="empty-order">
+        <p>---Trống---</p>
+        <span>Hãy chọn món từ menu bên trái</span>
+      </div>
     `;
     elements.summaryItems.textContent = 0;
     elements.summaryPrice.textContent = "0đ";
@@ -99,33 +140,58 @@ function renderOrderItems() {
   let html = "";
   let totalPrice = 0;
 
+  html += `
+    <div class="order-header-row">
+      <div class="col-name">Tên món</div>
+      <div class="col-qty">SL</div>
+      <div class="col-price">T.Tiền</div>
+      <div class="col-action"></div>
+    </div>
+  `;
+
   orders.forEach((order) => {
     const itemTotal = order.price * order.quantity;
     totalPrice += itemTotal;
-    const formattedPrice = new Intl.NumberFormat("vi-VN").format(itemTotal);
+    const formattedTotal = new Intl.NumberFormat("vi-VN").format(itemTotal);
+
+    // kiểm tra xem có phải loại bàn không
+    const isTable = order.category === "table";
+
+    // nếu là bàn set read only và bỏ background
+    const inputAttributes = isTable
+      ? `readonly style="background: transparent;border: none; font-weight: bold;"`
+      : `onfocus="this.select()"`;
 
     html += `
-      <div class="order__item" data-order-id="${order.id}">
-        <div class="order-info">
-          <span class="order-name">${order.name}</span>
-          <span class="order-quantity">SL: <strong>${order.quantity}</strong></span>
-        </div>
+      <div class="order-row">
+        <div class="col-name" title="${order.name}">${order.name}</div>
         
-        <div class="order-action">
-          <span class="order-price">${formattedPrice}đ</span>
-          <button class="remove-order-btn" data-order-id="${order.id}" title="Giảm số lượng">
-            <img src="./assets/icon/minus.svg" alt="-" style="width: 12px;"> 
-            </button>
+        <div class="col-qty">
+          <input type="number" 
+            class="qty-input-clean" 
+            value="${order.quantity}" 
+            min="1" 
+            data-order-id="${order.id}"
+            ${inputAttributes}" >
+        </div>
+        <div class="col-price">${formattedTotal}</div>       
+        <div class="col-action">
+          <button class="remove-order-btn" data-order-id="${order.id}"><img src="/assets/icon/close.svg" alt="Close"></button>
         </div>
       </div>
     `;
   });
 
-  ordersContainer.innerHTML = html;
-  elements.summaryItems.textContent = orders.reduce(
-    (sum, order) => sum + order.quantity,
-    0
-  );
+  elements.detailsOrder.innerHTML = html;
+  elements.summaryItems.textContent = orders.length;
+
+  const totalQuantity = orders.reduce((sum, order) => {
+    return sum + Number(order.quantity);
+  }, 0);
+
+  elements.summaryItems.textContent = totalQuantity;
+
+  // Cập nhật tổng tiền
   elements.summaryPrice.textContent =
     new Intl.NumberFormat("vi-VN").format(totalPrice) + "đ";
 }
@@ -137,14 +203,34 @@ function openTableDetails(tableElement) {
 
   const tableTitle = tableElement.querySelector(".table__title").textContent;
   const tableTime = tableElement.querySelector(".table__timer").textContent;
+  const isPlaying = tableElement.classList.contains("table__playing");
 
   elements.detailsTableTitle.textContent = `${tableTitle} - Chi tiết`;
   elements.summaryTime.textContent = tableTime;
+
+  // Hiển thị giờ bắt đầu
+  if (tableStartTimes[currentTableID]) {
+    elements.summaryStartTime.textContent = tableStartTimes[currentTableID];
+  } else {
+    elements.summaryStartTime.textContent = getCurrentTime();
+  }
+
+  // Cập nhật nút Start/Stop
+  if (isPlaying) {
+    elements.startStopBtn.textContent = "Dừng lại";
+    elements.startStopBtn.classList.add("btn-stop");
+    elements.startStopBtn.classList.remove("btn-start");
+  } else {
+    elements.startStopBtn.textContent = "Bắt đầu";
+    elements.startStopBtn.classList.add("btn-start");
+    elements.startStopBtn.classList.remove("btn-stop");
+  }
 
   if (!tableMeals[currentTableID]) {
     tableMeals[currentTableID] = [];
   }
 
+  selectedCategory = "all";
   renderDetailsMenu();
   renderOrderItems();
 
@@ -159,47 +245,123 @@ elements.detailsMenu.addEventListener("click", (e) => {
     const menuItem = menuData.find((item) => item.id === itemId);
 
     if (menuItem && currentTableID) {
-      const existingOrder = tableMeals[currentTableID].find(
-        (order) => order.id === itemId
-      );
+      if (!tableMeals[currentTableID]) {
+        tableMeals[currentTableID] = [];
+      }
 
-      if (existingOrder) {
-        existingOrder.quantity++;
-      } else {
-        tableMeals[currentTableID].push({
+      const currentOrders = tableMeals[currentTableID];
+
+      if (menuItem.category == "table") {
+        const existingTableIndex = currentOrders.findIndex(
+          (order) => order.category === "table"
+        );
+        if (existingTableIndex !== -1) {
+          if (currentOrders[existingTableIndex].id === itemId) {
+            return;
+          }
+          currentOrders.splice(existingTableIndex, 1);
+        }
+        currentOrders.push({
           id: menuItem.id,
           name: menuItem.name,
           price: menuItem.price,
+          category: menuItem.category,
           quantity: 1,
         });
+      } else {
+        const existingOrder = currentOrders.find(
+          (order) => order.id === itemId
+        );
+        if (existingOrder) {
+          existingOrder.quantity++;
+        } else {
+          currentOrders.push({
+            id: menuItem.id,
+            name: menuItem.name,
+            price: menuItem.price,
+            category: menuItem.category,
+            quantity: 1,
+          });
+        }
       }
-
       renderOrderItems();
     }
   }
 });
 
-// ==================== Remove Order Handler ============================
+// ==================== Update Quantity & Remove Order Handler ===========
 elements.detailsOrder.addEventListener("click", (e) => {
   const removeBtn = e.target.closest(".remove-order-btn");
   if (removeBtn) {
     const orderId = Number(removeBtn.dataset.orderId);
 
     if (currentTableID && tableMeals[currentTableID]) {
-      const orderIndex = tableMeals[currentTableID].findIndex(
-        (order) => order.id === orderId
+      tableMeals[currentTableID] = tableMeals[currentTableID].filter(
+        (order) => order.id !== orderId
       );
+      renderOrderItems();
+    }
+  }
+});
 
-      if (orderIndex !== -1) {
-        if (tableMeals[currentTableID][orderIndex].quantity > 1) {
-          tableMeals[currentTableID][orderIndex].quantity--;
-        } else {
-          tableMeals[currentTableID].splice(orderIndex, 1);
-        }
+// Handle quantity input change
+elements.detailsOrder.addEventListener("input", (e) => {
+  if (e.target.classList.contains("qty-input-clean")) {
+    const orderId = Number(e.target.dataset.orderId);
+    let newQuantity = parseInt(e.target.value);
 
+    if (isNaN(newQuantity) || newQuantity < 1) {
+      newQuantity = 1;
+    }
+
+    if (currentTableID && tableMeals[currentTableID]) {
+      const order = tableMeals[currentTableID].find((o) => o.id === orderId);
+      if (order) {
+        order.quantity = newQuantity;
         renderOrderItems();
       }
     }
+  }
+});
+
+// ==================== Category Filter Handler ============================
+elements.menuCategoryFilter?.addEventListener("change", (e) => {
+  selectedCategory = e.target.value;
+  renderDetailsMenu();
+});
+
+// ==================== Search Menu in Detail ============================
+elements.searchMenuDetail?.addEventListener("input", () => {
+  renderDetailsMenu();
+});
+
+// ==================== Start/Stop Button Handler ============================
+elements.startStopBtn?.addEventListener("click", () => {
+  if (!currentTableID) return;
+
+  // Tìm table element tương ứng
+  const tableElement = document
+    .querySelector(`[data-id="${currentTableID}"]`)
+    ?.closest(".table");
+  if (!tableElement) return;
+
+  const startButton = tableElement.querySelector(".table__start");
+  const statusText = tableElement.querySelector(".table__status");
+  const timeCount = tableElement.querySelector(".table__timer");
+
+  // Trigger click vào nút start/stop bên ngoài
+  handleTimer(tableElement, startButton, statusText, timeCount);
+
+  // Cập nhật lại giao diện modal
+  const isPlaying = tableElement.classList.contains("table__playing");
+  if (isPlaying) {
+    elements.startStopBtn.textContent = "Dừng lại";
+    elements.startStopBtn.classList.add("btn-stop");
+    elements.startStopBtn.classList.remove("btn-start");
+  } else {
+    elements.startStopBtn.textContent = "Bắt đầu";
+    elements.startStopBtn.classList.add("btn-start");
+    elements.startStopBtn.classList.remove("btn-stop");
   }
 });
 
@@ -210,7 +372,6 @@ function renderMenu(dataRender = menuData) {
   if (dataRender.length === 0) {
     elements.menuItemList.innerHTML = `
     <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;">
-        <div style="font-size: 40px;">🔍</div>
         <div style="font-size: 1.4rem; margin-top: 10px;">Không tìm thấy món nào</div>
       </div>
     `;
@@ -230,7 +391,11 @@ function renderMenu(dataRender = menuData) {
     } else if (item.category === "tobacco") {
       badgeClass = "badge-tobacco";
       categoryName = "Thuốc lá";
+    } else if (item.category === "table") {
+      badgeClass = "badge-table";
+      categoryName = "Loại bàn";
     }
+
     const formattedPrice = new Intl.NumberFormat("vi-VN").format(item.price);
     const itemHTML = `
     <div class="menu-item-card">
@@ -362,11 +527,11 @@ elements.menuItemList.addEventListener("click", (e) => {
   if (deleteBtn) {
     const idDelete = Number(deleteBtn.dataset.id);
     const itemToDelete = menuData.find((m) => m.id === idDelete);
-
-    if (confirm(`Bạn chắc chắn muốn xóa "${itemToDelete.name}"?`)) {
-      menuData = menuData.filter((item) => item.id !== idDelete);
-      saveMenu();
-      renderMenu();
+    if (itemToDelete) {
+      itemDeleteID = idDelete;
+      tableDelete = null;
+      elements.deleteTableName.textContent = `Món ${itemToDelete.name}`;
+      elements.deleteModal.classList.add("active");
     }
   }
 });
@@ -382,6 +547,13 @@ function formatTime(countTime) {
   return [hours, minutes, seconds]
     .map((unit) => String(unit).padStart(2, "0"))
     .join(":");
+}
+
+function getCurrentTime() {
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
 }
 
 function closeAllMenu(currentMenu = null) {
@@ -425,10 +597,15 @@ function createTableHTML(name, type) {
 // ==================== Table Timer Handler ====================
 function handleTimer(tableContainer, startButton, statusText, timeCount) {
   const playing = tableContainer.classList.toggle("table__playing");
+  const tableHeader = tableContainer.querySelector(".table__header");
+  const tableID = tableHeader.dataset.id;
 
   if (playing) {
     startButton.textContent = "Stop";
     statusText.textContent = "Đang chơi";
+
+    // Lưu giờ bắt đầu
+    tableStartTimes[tableID] = getCurrentTime();
 
     currentPlaying++;
     elements.playingCount.textContent = currentPlaying;
@@ -438,6 +615,14 @@ function handleTimer(tableContainer, startButton, statusText, timeCount) {
     tableContainer.timerID = setInterval(() => {
       timeCount.textContent = formatTime(++second);
       tableContainer.currentSeconds = second;
+
+      // Cập nhật thời gian trong modal nếu đang mở
+      if (
+        currentTableID === tableID &&
+        elements.tableDetails.classList.contains("active")
+      ) {
+        elements.summaryTime.textContent = formatTime(second);
+      }
     }, 1000);
   } else {
     startButton.textContent = "Start";
@@ -504,6 +689,7 @@ elements.addTableForm.addEventListener("submit", (e) => {
 elements.deleteCancel.addEventListener("click", () => {
   elements.deleteModal.classList.remove("active");
   tableDelete = null;
+  itemDeleteID = null;
 });
 
 // Button submit confirm delete table
@@ -516,8 +702,19 @@ elements.deleteSubmit.addEventListener("click", () => {
     currentTables--;
     elements.tablesCount.textContent = currentTables;
     tableDelete.remove();
-    elements.deleteModal.classList.remove("active");
     tableDelete = null;
+
+    elements.deleteModal.classList.remove("active");
+    return;
+  }
+  if (itemDeleteID) {
+    menuData = menuData.filter((item) => item.id !== itemDeleteID);
+    saveMenu();
+    renderMenu();
+    renderDetailsMenu();
+
+    itemDeleteID = null;
+    elements.deleteModal.classList.remove("active");
   }
 });
 

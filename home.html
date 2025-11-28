@@ -159,42 +159,63 @@
         <div class="table-detail-layout">
           <div class="detail__list">
             <h3>Menu</h3>
-            <input
-              type="text"
-              placeholder="Tìm món..."
-              aria-label="Tìm kiếm món ăn"
-            />
-            <div id="details-menu-container"></div>
+            <div class="menu-filters">
+              <select id="menu-category-filter" class="filter-select" aria-label="Lọc theo danh mục">
+                <option value="all">Tất cả</option>
+                <option value="food">Đồ ăn</option>
+                <option value="drink">Đồ uống</option>
+                <option value="tobacco">Thuốc lá</option>
+                <option value="table">Loại bàn</option>
+                <option value="other">Khác</option>
+              </select>
+              <input
+                type="text"
+                id="search-menu-detail"
+                placeholder="Tìm món..."
+                aria-label="Tìm kiếm món ăn"
+              />
+            </div>
+            <div id="details-menu-container">
+            </div>
           </div>
           <div class="detail__list">
             <h3>Đơn hàng</h3>
             <div id="details-order-container"></div>
             <div class="order-summary">
               <div class="summary-line">
+                <span>Giờ bắt đầu:</span>
+                <span id="summary-start-time">--:--</span>
+              </div>
+              <div class="summary-line">
                 <span>Tổng giờ chơi:</span>
                 <span id="summary-time">00:00:00</span>
               </div>
               <div class="summary-line">
                 <span>Tổng món:</span>
-                <span id="summary-items">1</span>
+                <span id="summary-items">0</span>
               </div>
               <div class="summary-line total">
                 <strong>Tổng tiền:</strong>
-                <strong id="summary-price">50.000</strong>
+                <strong id="summary-price">0đ</strong>
               </div>
             </div>
           </div>
         </div>
         <div class="modal__action">
-          <button type="button" class="btn-discount" id="discount-btn">
-            Giảm Giá
+          <button type="button" class="btn-start" id="start-stop-btn">
+            Bắt đầu
           </button>
-          <button type="button" class="btn-move" id="move-table-btn">
-            Chuyển bàn
-          </button>
-          <button type="button" class="btn-delete" id="checkout-btn">
-            Thanh toán
-          </button>
+          <div class="action-right">
+            <button type="button" class="btn-discount" id="discount-btn">
+              Giảm Giá
+            </button>
+            <button type="button" class="btn-move" id="move-table-btn">
+              Chuyển bàn
+            </button>
+            <button type="button" class="btn-delete" id="checkout-btn">
+              Thanh toán
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -227,6 +248,7 @@
                 <option value="food">Đồ ăn</option>
                 <option value="drink">Đồ uống</option>
                 <option value="tobacco">Thuốc lá</option>
+                <option value="table">Loại bàn</option>
                 <option value="other">Khác</option>
               </select>
             </div>
@@ -243,5 +265,9 @@
       </div>
     </div>
     <script src="./assets/js/home.js"></script>
+
+
+
+    <div class="header"></div>
   </body>
 </html>
