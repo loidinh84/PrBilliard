@@ -57,6 +57,7 @@ let tableMeals = {};
 let tableStartTimes = {};
 let selectedCategory = "all";
 let itemDeleteID = null;
+let tableProgress = {};
 
 // Menu mẫu
 let menuData = [
@@ -150,7 +151,18 @@ function renderOrderItems() {
   `;
 
   orders.forEach((order) => {
-    const itemTotal = order.price * order.quantity;
+    let itemTotal = 0;
+    let unitPriceDisplay = "";
+
+    if (order.category === "table") {
+      itemTotal = order.totalPrice || 0;
+      unitPriceDisplay =
+        new Intl.NumberFormat("vi-VN").format(order.price) + "đ/giờ";
+    } else {
+      itemTotal = order.price * order.quantity;
+      unitPriceDisplay =
+        new Intl.NumberFormat("vi-VN").format(order.price) + "đ/món";
+    }
     totalPrice += itemTotal;
     const formattedTotal = new Intl.NumberFormat("vi-VN").format(itemTotal);
 
@@ -256,18 +268,23 @@ elements.detailsMenu.addEventListener("click", (e) => {
           (order) => order.category === "table"
         );
         if (existingTableIndex !== -1) {
-          if (currentOrders[existingTableIndex].id === itemId) {
+          const existingItem = currentOrders[existingTableIndex];
+          if (existingItem.id === itemId) {
             return;
           }
-          currentOrders.splice(existingTableIndex, 1);
+          existingItem.id = menuItem.id;
+          existingItem.name = menuItem.name;
+          existingItem.price = menuItem.price;
+        } else {
+          currentOrders.push({
+            id: menuItem.id,
+            name: menuItem.name,
+            price: menuItem.price,
+            category: menuItem.category,
+            quantity: 1,
+            totalPrice: 0,
+          });
         }
-        currentOrders.push({
-          id: menuItem.id,
-          name: menuItem.name,
-          price: menuItem.price,
-          category: menuItem.category,
-          quantity: 1,
-        });
       } else {
         const existingOrder = currentOrders.find(
           (order) => order.id === itemId
@@ -604,17 +621,29 @@ function handleTimer(tableContainer, startButton, statusText, timeCount) {
     startButton.textContent = "Stop";
     statusText.textContent = "Đang chơi";
 
-    // Lưu giờ bắt đầu
-    tableStartTimes[tableID] = getCurrentTime();
-
+    if (!tableStartTimes[tableID]) {
+      tableStartTimes[tableID] = getCurrentTime();
+    }
     currentPlaying++;
     elements.playingCount.textContent = currentPlaying;
 
-    let second = 0;
+    // Lấy số giây cũ để chạy tiếp, hoặc bắt đầu từ 0
+    let second = tableContainer.currentSeconds || 0;
 
     tableContainer.timerID = setInterval(() => {
-      timeCount.textContent = formatTime(++second);
+      // lưu số giây hiện tại
       tableContainer.currentSeconds = second;
+      timeCount.textContent = formatTime(++second);
+
+      if (tableMeals[tableID]) {
+        const tableItem = tableMeals[tableID].find(
+          (item) => item.category === "table"
+        );
+        if (tableItem) {
+          const hoursPlayed = second / 3600;
+          tableItem.totalPrice = Math.round(hoursPlayed * tableItem.price);
+        }
+      }
 
       // Cập nhật thời gian trong modal nếu đang mở
       if (
@@ -622,6 +651,7 @@ function handleTimer(tableContainer, startButton, statusText, timeCount) {
         elements.tableDetails.classList.contains("active")
       ) {
         elements.summaryTime.textContent = formatTime(second);
+        renderOrderItems();
       }
     }, 1000);
   } else {
