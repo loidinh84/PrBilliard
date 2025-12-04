@@ -59,7 +59,7 @@
         <section class="section-summary">
           <div class="section__card">
             <span>Doanh thu hôm nay</span>
-            <strong>10.000.000đ</strong>
+            <strong id="daily-revenue">0đ</strong>
           </div>
           <div class="section__card">
             <span>Số bàn đang mở</span>
@@ -160,7 +160,11 @@
           <div class="detail__list">
             <h3>Menu</h3>
             <div class="menu-filters">
-              <select id="menu-category-filter" class="filter-select" aria-label="Lọc theo danh mục">
+              <select
+                id="menu-category-filter"
+                class="filter-select"
+                aria-label="Lọc theo danh mục"
+              >
                 <option value="all">Tất cả</option>
                 <option value="food">Đồ ăn</option>
                 <option value="drink">Đồ uống</option>
@@ -175,8 +179,7 @@
                 aria-label="Tìm kiếm món ăn"
               />
             </div>
-            <div id="details-menu-container">
-            </div>
+            <div id="details-menu-container"></div>
           </div>
           <div class="detail__list">
             <h3>Đơn hàng</h3>
@@ -264,7 +267,49 @@
         </form>
       </div>
     </div>
+    <!-- Modal in detail table -->
+    <div class="table-modal custom-modal" id="custom-confirm-modal">
+      <div class="modal__content modal-sm text-center">
+        <h2 class="text-danger">Xác nhận</h2>
+        <p class="modal-msg" id="confirm-message"></p>
+        <div class="modal__action justify-center">
+          <button type="button" class="btn-cancel" id="btn-confirm-no">
+            Hủy
+          </button>
+          <button type="button" class="btn-delete" id="btn-confirm-yes">
+            Đồng ý
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="table-modal custom-modal z-high" id="custom-prompt-modal">
+      <div class="modal__content modal-md">
+        <h2 id="prompt-title">Nhập thông tin</h2>
+        <input  type="text" class="modal-input" id="prompt-input" title="Nhập thông tin" autocomplete="off"/>
+        <p id="prompt-error" class="prompt-error">Vui lòng nhập thông tin!</p>
+        <div class="modal__action">
+          <button type="button" class="btn-cancel" id="btn-prompt-cancel">
+            Hủy
+          </button>
+          <button type="button" class="btn-submit" id="btn-prompt-ok">
+            Xác nhận
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="table-modal custom-modal z-high" id="custom-alert-modal">
+      <div class="modal__content modal-sm text-center">
+        <h2 class="text-primary">Thông báo</h2>
+        <p id="alert-message" class="modal-msg"></p>
+        <div class="modal__action justify-center">
+          <button class="btn-submit w-full" id="btn-alert-ok" type="button">OK</button>
+        </div>
+      </div>
+    </div>
+    <div id="toast-container"></div>
     <script src="./assets/js/home.js"></script>
-
   </body>
 </html>
+
+
+

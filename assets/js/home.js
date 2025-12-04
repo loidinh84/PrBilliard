@@ -58,6 +58,10 @@ let tableStartTimes = {};
 let selectedCategory = "all";
 let itemDeleteID = null;
 let tableProgress = {};
+let tableDiscount = {};
+let dailyRevenue = 0;
+let confirmCallback = null;
+let promptCallback = null;
 
 // Menu mẫu
 let menuData = [
@@ -67,6 +71,268 @@ let menuData = [
   { id: 4, name: "Bàn Lỗ - 1 giờ", price: 50000, category: "table" },
   { id: 5, name: "Bàn Phăng - 1 giờ", price: 60000, category: "table" },
 ];
+
+// ============================Custom Dialogs=======================================
+function showToast(message, type = "success") {
+  const container = document.getElementById("toast-container");
+  const toast = document.createElement("div");
+  toast.classList.add("toast", type);
+
+  let icon = "✅";
+  if (type === "error") icon = "❌";
+  if (type === "warning") icon = "⚠️";
+
+  toast.innerHTML = `
+  <div class="toast-icon">${icon}</div>
+    <div class="toast-message">${message}</div>
+  `;
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 3000);
+}
+
+function showAlert(message) {
+  document.getElementById("alert-message").textContent = message;
+  document.getElementById("custom-alert-modal").classList.add("active");
+}
+document.getElementById("btn-alert-ok").addEventListener("click", () => {
+  document.getElementById("custom-alert-modal").classList.remove("active");
+});
+
+function showConfirm(message, onYes) {
+  document.getElementById("confirm-message").innerHTML = message.replace(
+    /\n/g,
+    "<br>"
+  );
+  confirmCallback = onYes;
+  document.getElementById("custom-confirm-modal").classList.add("active");
+}
+document.getElementById("btn-confirm-yes").addEventListener("click", () => {
+  if (confirmCallback) confirmCallback();
+  document.getElementById("custom-confirm-modal").classList.remove("active");
+});
+document.getElementById("btn-confirm-no").addEventListener("click", () => {
+  document.getElementById("custom-confirm-modal").classList.remove("active");
+});
+
+function showPrompt(title, placeholder, onOk, inputType = "text") {
+  const modal = document.getElementById("custom-prompt-modal");
+  const input = document.getElementById("prompt-input");
+  document.getElementById("prompt-title").textContent = title;
+  input.placeholder = placeholder;
+  input.value = "";
+  input.type = inputType;
+  document.getElementById("prompt-error").style.display = "none";
+
+  promptCallback = onOk;
+  modal.classList.add("active");
+  setTimeout(() => input.focus(), 100);
+}
+document.getElementById("btn-prompt-ok").addEventListener("click", () => {
+  const value = document.getElementById("prompt-input").value.trim();
+  if (!value) {
+    document.getElementById("prompt-error").style.display = "block";
+    return;
+  }
+  if (promptCallback) promptCallback(value);
+  document.getElementById("custom-prompt-modal").classList.remove("active");
+});
+document.getElementById("btn-prompt-cancel").addEventListener("click", () => {
+  document.getElementById("custom-prompt-modal").classList.remove("active");
+});
+
+document.getElementById("btn-prompt-ok").addEventListener("click", () => {
+  const value = document.getElementById("prompt-input").value.trim();
+  if (!value) {
+    document.getElementById("prompt-error").style.display = "block";
+    return;
+  }
+  if (promptCallback) promptCallback(value);
+  document.getElementById("custom-prompt-modal").classList.remove("active");
+});
+
+document.getElementById("btn-prompt-cancel").addEventListener("click", () => {
+  document.getElementById("custom-prompt-modal").classList.remove("active");
+});
+
+// ============================Event 3 button in detail table========================
+// Giảm giá
+elements.discountBtn.addEventListener("click", () => {
+  if (!currentTableID) return;
+
+  showPrompt(
+    "Nhập % giảm giá",
+    "ví dụ: 10",
+    (value) => {
+      let discountValue = parseInt(value);
+      if (isNaN(discountValue) || discountValue < 0) discountValue = 0;
+      if (discountValue > 100) discountValue = 100;
+
+      tableDiscount[currentTableID] = discountValue;
+
+      if (discountValue > 0) {
+        elements.discountBtn.textContent = ` Giảm ${discountValue}%`;
+        elements.discountBtn.style.background = "#e53e3e";
+      } else {
+        elements.discountBtn.textContent = "Giảm giá";
+        elements.discountBtn.style.background = "";
+      }
+      renderOrderItems();
+    },
+    "number"
+  );
+});
+
+// Thanh Toán
+elements.checkoutBtn.addEventListener("click", () => {
+  if (!currentTableID) return;
+
+  const tableElement = document
+    .querySelector(`.table__header[data-id="${currentTableID}"]`)
+    .closest(".table");
+
+  const isPlaying = tableElement.classList.contains("table__playing");
+  const hasItems =
+    tableMeals[currentTableID] && tableMeals[currentTableID].length > 0;
+  if (!isPlaying && !hasItems) {
+    alert("Bàn này đang trống, không thể thanh toán!");
+    return;
+  }
+
+  let tempTotal = 0;
+  if (tableMeals[currentTableID]) {
+    tableMeals[currentTableID].forEach((order) => {
+      const itemTotal =
+        order.category === "table"
+          ? order.totalPrice || 0
+          : order.price * order.quantity;
+      tempTotal += itemTotal;
+    });
+  }
+
+  const discount = tableDiscount[currentTableID] || 0;
+
+  const finalBill = tempTotal - (tempTotal * discount) / 100;
+
+  const formattedBill = new Intl.NumberFormat("vi-VN").format(finalBill);
+
+  showConfirm(`Thanh toán bàn này?\nTổng tiền: ${formattedBill}đ`, () => {
+    dailyRevenue += finalBill;
+    const revenue = document.getElementById("daily-revenue");
+    if (revenue)
+      revenue.textContent =
+        new Intl.NumberFormat("vi-VN").format(dailyRevenue) + "đ";
+
+    const startButton = tableElement.querySelector(".table__start");
+    if (tableElement.classList.contains("table__playing")) {
+      const statusText = tableElement.querySelector(".table__status");
+      const timeCount = tableElement.querySelector(".table__timer");
+      handleTimer(tableElement, startButton, statusText, timeCount);
+    }
+    // Reset dữ liệu
+    tableElement.querySelector(".table__timer").textContent = "00:00:00";
+    if (tableElement.timerID) clearInterval(tableElement.timerID);
+    tableElement.currentSeconds = 0;
+
+    delete tableMeals[currentTableID];
+    delete tableStartTimes[currentTableID];
+    delete tableProgress[currentTableID];
+    delete tableDiscount[currentTableID];
+
+    elements.tableDetails.classList.remove("active");
+    currentTableID = null;
+  });
+});
+
+// Chuyển bàn
+elements.moveTableBtn.addEventListener("click", () => {
+  if (!currentTableID) return;
+
+  showPrompt(
+    "Chuyển đến bàn nào?",
+    "Nhập tên bàn muốn chuyển",
+    (targetName) => {
+      const allTables = document.querySelectorAll(".table");
+      let targetTableEl = null;
+      let targetTableID = null;
+
+      allTables.forEach((table) => {
+        const title = table.querySelector(".table__title").textContent;
+        if (title.toLowerCase() === targetName.toLowerCase().trim()) {
+          targetTableEl = table;
+          targetTableID = table.querySelector(".table__header").dataset.id;
+        }
+      });
+    }
+  );
+
+  if (!targetTableEl) {
+    alert("Không tìm thấy bàn: " + targetName);
+    return;
+  }
+
+  if (targetTableID === currentTableID) {
+    alert("Không thể chuyển sang chính nó!");
+    return;
+  }
+
+  // Kiểm tra bàn đích có đang bận không
+  if (
+    targetTableEl.classList.contains("table__playing") ||
+    (tableMeals[targetTableID] && tableMeals[targetTableID].length > 0)
+  ) {
+    alert("Bàn đích đang có người chơi hoặc chưa thanh toán!");
+    return;
+  }
+
+  if (!confirm(`Chuyển tất cả từ bàn hiện tại sang [${targetName}]?`)) return;
+
+  // chuyển món ăn
+  tableMeals[targetTableID] = JSON.parse(
+    JSON.stringify(tableMeals[currentTableID] || [])
+  );
+  const currentTableEl = document
+    .querySelector(`.table__header[data-id="${currentTableID}"]`)
+    .closest(".table");
+
+  if (currentTableEl.classList.contains("table__playing")) {
+    const currentSeconds = currentTableEl.currentSeconds || 0;
+
+    clearInterval(currentTableEl.timerID);
+    currentTableEl.classList.remove("table__playing");
+    currentTableEl.querySelector(".table__start").textContent = "Trống";
+    currentTableEl.querySelector(".table__start").textContent = "Start";
+    currentTableEl.querySelector(".table__timer").textContent = "00:00:00";
+    currentTableEl.currentSeconds = 0;
+
+    currentPlaying--;
+    elements.playingCount.textContent = currentPlaying;
+
+    const startBtnNew = targetTableEl.querySelector(".table__start");
+    const statusNew = targetTableEl.querySelector(".table__status");
+    const timerNew = targetTableEl.querySelector(".table__timer");
+
+    targetTableEl.currentSeconds = currentSeconds;
+    handleTimer(targetTableEl, startBtnNew, statusNew, timerNew);
+  } else {
+    currentTableEl.querySelector(".table__status").textContent = "Trống";
+    currentTableEl.classList.remove("table__playing");
+  }
+
+  // Xóa dữ liệu bàn cũ
+  delete tableMeals[currentTableID];
+  delete tableStartTimes[currentTableID];
+  delete tableProgress[currentTableID];
+  delete tableDiscount[currentTableID];
+
+  // đóng modal và thông báo
+  elements.tableDetails.classList.remove("active");
+  currentTableID = null;
+  alert("Chuyển bàn thành công!");
+});
 
 // ==================== Details Menu HTML ============================
 function renderDetailsMenu(dataRender = menuData) {
@@ -195,17 +461,29 @@ function renderOrderItems() {
   });
 
   elements.detailsOrder.innerHTML = html;
-  elements.summaryItems.textContent = orders.length;
 
-  const totalQuantity = orders.reduce((sum, order) => {
-    return sum + Number(order.quantity);
-  }, 0);
+  const discountPercent = tableDiscount[currentTableID] || 0;
+  const discountAmount = (totalPrice * discountPercent) / 100;
+  const finalPrice = totalPrice - discountAmount;
 
-  elements.summaryItems.textContent = totalQuantity;
+  // Hiển Thị Tổng Tiền
+  const formattedTotal = new Intl.NumberFormat("vi-VN").format(totalPrice);
+  const formattedFinal = new Intl.NumberFormat("vi-VN").format(finalPrice);
 
-  // Cập nhật tổng tiền
-  elements.summaryPrice.textContent =
-    new Intl.NumberFormat("vi-VN").format(totalPrice) + "đ";
+  elements.summaryItems.textContent = orders.reduce(
+    (sum, order) => sum + Number(order.quantity),
+    0
+  );
+
+  if (discountPercent > 0) {
+    elements.summaryPrice.innerHTML = `
+    <span style="text-decoration: line-through; color: #999; font-size: 0.8em;">${formattedTotal}đ</span>
+        <br>
+        <span>${formattedFinal}đ</span>
+    `;
+  } else {
+    elements.summaryPrice.textContent = formattedTotal + "đ";
+  }
 }
 
 // ==================== Open Table Details ============================
@@ -247,6 +525,15 @@ function openTableDetails(tableElement) {
   renderOrderItems();
 
   elements.tableDetails.classList.add("active");
+
+  // reset nút giảm giá
+  elements.discountBtn.textContent = "Giảm giá";
+  elements.discountBtn.style.background = "";
+
+  if (tableDiscount[currentTableID]) {
+    elements.discountBtn.textContent = `Giảm ${tableDiscount[currentTableID]}%`;
+    elements.discountBtn.style.background = "#e53e3e";
+  }
 }
 
 // ==================== Add Order Handler ============================
