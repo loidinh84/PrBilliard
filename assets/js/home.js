@@ -45,6 +45,12 @@ const elements = {
   startStopBtn: document.getElementById("start-stop-btn"),
   menuCategoryFilter: document.getElementById("menu-category-filter"),
   searchMenuDetail: document.getElementById("search-menu-detail"),
+  // History
+  historyBtn: document.getElementById("history-btn"),
+  historyModal: document.getElementById("history-modal"),
+  closeHistoryModal: document.getElementById("close-history-modal"),
+  closeHistoryBtn: document.getElementById("close-history-btn"),
+  historyList: document.getElementById("history-list"),
 };
 
 let currentPlaying = 0;
@@ -62,6 +68,7 @@ let tableDiscount = {};
 let dailyRevenue = 0;
 let confirmCallback = null;
 let promptCallback = null;
+let invoiceHistory = [];
 
 // Menu mẫu
 let menuData = [
@@ -72,18 +79,177 @@ let menuData = [
   { id: 5, name: "Bàn Phăng - 1 giờ", price: 60000, category: "table" },
 ];
 
+// ===========================Change time====================================
+
+const timeInput = document.getElementById("summary-start-time");
+if (timeInput) {
+  timeInput.addEventListener("click", function () {
+    try {
+      this.showPicker();
+    } catch (error) {
+      console.log("Trình duyệt không hỗ trợ", error);
+    }
+  });
+}
+
+timeInput.addEventListener("change", (e) => {
+  if (!currentTableID) return;
+
+  const newTimeStr = e.target.value;
+  if (!newTimeStr) return;
+
+  // tính thời gian mới
+  const now = new Date();
+  const [hours, minutes] = newTimeStr.split(":").map(Number);
+
+  // Tạo mốc thời gian bắt đầu mới
+  const newStartDate = new Date();
+  newStartDate.setHours(hours, minutes, 0, 0);
+
+  // Tính khoảng cách từ bắt đầu đến hiện tại
+  let diffSeconds = Math.floor((now - newStartDate) / 1000);
+
+  // Validate: không được chọn giờ tương lai
+  if (diffSeconds < 0) {
+    showToast("Không thể chọn giờ trong tương lai!", "error");
+    e.target.value = tableStartTimes[currentTableID];
+    return;
+  }
+
+  // Cập nhật dữ liệu
+  tableStartTimes[currentTableID] = newTimeStr;
+
+  const tableElement = document
+    .querySelector(`.table__header[data-id="${currentTableID}"]`)
+    .closest(".table");
+  tableElement.currentSeconds = diffSeconds;
+
+  if (tableMeals[currentTableID]) {
+    const tableItem = tableMeals[currentTableID].find(
+      (item) => item.category === "table"
+    );
+    if (tableItem) {
+      const hoursPlayed = diffSeconds / 3600;
+      tableItem.totalPrice = Math.ceil(hoursPlayed * tableItem.price);
+    }
+  }
+
+  elements.summaryTime.textContent = formatTime(diffSeconds);
+  renderOrderItems();
+  showToast("Đã cập nhật giờ bắt đầu!", "success");
+});
+
+// ============================History Manager===================================
+if (elements.historyBtn) {
+  document.getElementById("history-btn").addEventListener("click", () => {
+    renderHistory();
+    document.getElementById("history-modal").classList.add("active");
+  });
+}
+
+document.getElementById("close-history-modal").addEventListener("click", () => {
+  document.getElementById("history-modal").classList.remove("active");
+});
+
+document.getElementById("close-history-btn").addEventListener("click", () => {
+  document.getElementById("history-modal").classList.remove("active");
+});
+
+function renderHistory() {
+  const list = document.getElementById("history-list");
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  if (invoiceHistory.length === 0) {
+    list.innerHTML = `<tr><td colspan="6" class="history-empty">Chưa có giao dịch nào</td></tr>`;
+    return;
+  }
+
+  invoiceHistory.forEach((inv) => {
+    const row = document.createElement("tr");
+    row.style.cursor = "pointer";
+
+    row.innerHTML = `
+        <td>${inv.time}</td>
+        <td style="font-weight: 500;">${inv.tableName}</td>
+        <td>${new Intl.NumberFormat("vi-VN").format(inv.total)}đ</td>
+        <td class="col-discount">-${new Intl.NumberFormat("vi-VN").format(
+          inv.discount
+        )}đ</td>
+        <td class="col-total">${new Intl.NumberFormat("vi-VN").format(
+          inv.final
+        )}đ</td>
+        <td style="text-align: center;">
+            <span class="material-symbols-rounded" style="color: #666;">visibility</span>
+        </td>
+    `;
+    row.addEventListener("click", () => showInvoiceDetail(inv));
+    list.appendChild(row);
+  });
+}
+
+function showInvoiceDetail(invoice) {
+  document.getElementById("inv-detail-id").textContent = `${invoice.id}`;
+  document.getElementById("inv-detail-table").textContent = invoice.tableName;
+  document.getElementById("inv-detail-time").textContent = invoice.time;
+  document.getElementById("inv-detail-staff").textContent =
+    invoice.staff || "Admin";
+
+  const listContainer = document.getElementById("inv-detail-list");
+  listContainer.innerHTML = "";
+
+  invoice.items.forEach((item) => {
+    let name = item.name;
+    let price = item.price * item.quantity;
+    let quantityDisplay = item.quantity;
+
+    // Nếu là bàn thì hiển thị khác 1 chút
+    if (item.category === "table") {
+      price = item.totalPrice;
+      quantityDisplay = "Giờ";
+    }
+
+    listContainer.innerHTML += `
+        <tr class="inv-row">
+            <td class="col-inv-name">${name}</td>
+            <td class="col-inv-qty">${quantityDisplay}</td>
+            <td class="col-inv-price">${new Intl.NumberFormat("vi-VN").format(
+              price
+            )}đ</td>
+        </tr>
+      `;
+  });
+
+  // Render tổng tiền
+  document.getElementById("inv-detail-total").textContent =
+    new Intl.NumberFormat("vi-VN").format(invoice.total) + "đ";
+  document.getElementById("inv-detail-discount").textContent =
+    "-" + new Intl.NumberFormat("vi-VN").format(invoice.discount) + "đ";
+  document.getElementById("inv-detail-final").textContent =
+    new Intl.NumberFormat("vi-VN").format(invoice.final) + "đ";
+
+  // Mở modal
+  document.getElementById("invoice-detail-modal").classList.add("active");
+}
+
+// Đóng modal chi tiết
+document.getElementById("close-inv-detail").addEventListener("click", () => {
+  document.getElementById("invoice-detail-modal").classList.remove("active");
+});
+
 // ============================Custom Dialogs=======================================
 function showToast(message, type = "success") {
   const container = document.getElementById("toast-container");
   const toast = document.createElement("div");
   toast.classList.add("toast", type);
 
-  let icon = "✅";
-  if (type === "error") icon = "❌";
-  if (type === "warning") icon = "⚠️";
+  let icon = "./assets/icon/tick.svg";
+  if (type === "error") icon = "./assets/icon/err.svg";
+  if (type === "warning") icon = "./assets/icon/warning.svg";
 
   toast.innerHTML = `
-  <div class="toast-icon">${icon}</div>
+  <img src="${icon}" class="toast-icon" alt="icon" />
     <div class="toast-message">${message}</div>
   `;
 
@@ -158,6 +324,27 @@ document.getElementById("btn-prompt-cancel").addEventListener("click", () => {
   document.getElementById("custom-prompt-modal").classList.remove("active");
 });
 
+document.getElementById("prompt-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    document.getElementById("btn-prompt-ok").click();
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    const activeModals = document.querySelectorAll(".table-modal.active");
+
+    activeModals.forEach((modal) => {
+      modal.classList.remove("active");
+    });
+
+    tableDelete = null;
+    itemDeleteID = null;
+    currentTableID = null;
+  }
+});
+
 // ============================Event 3 button in detail table========================
 // Giảm giá
 elements.discountBtn.addEventListener("click", () => {
@@ -176,6 +363,7 @@ elements.discountBtn.addEventListener("click", () => {
       if (discountValue > 0) {
         elements.discountBtn.textContent = ` Giảm ${discountValue}%`;
         elements.discountBtn.style.background = "#e53e3e";
+        showToast(` Đã áp dụng giảm giá ${discountValue}%`, "success");
       } else {
         elements.discountBtn.textContent = "Giảm giá";
         elements.discountBtn.style.background = "";
@@ -214,37 +402,60 @@ elements.checkoutBtn.addEventListener("click", () => {
   }
 
   const discount = tableDiscount[currentTableID] || 0;
-
-  const finalBill = tempTotal - (tempTotal * discount) / 100;
+  const discountAmount = Math.ceil((tempTotal * discount) / 100);
+  const finalBill = tempTotal - discountAmount;
 
   const formattedBill = new Intl.NumberFormat("vi-VN").format(finalBill);
 
-  showConfirm(`Thanh toán bàn này?\nTổng tiền: ${formattedBill}đ`, () => {
-    dailyRevenue += finalBill;
-    const revenue = document.getElementById("daily-revenue");
-    if (revenue)
-      revenue.textContent =
-        new Intl.NumberFormat("vi-VN").format(dailyRevenue) + "đ";
+  showConfirm(
+    `Xác nhận thanh toán bàn này?\nTổng tiền: ${new Intl.NumberFormat(
+      "vi-VN"
+    ).format(finalBill)}đ`,
+    () => {
+      // Cộng dồn doanh thu
+      dailyRevenue += finalBill;
+      const revenue = document.getElementById("daily-revenue");
+      if (revenue)
+        revenue.textContent =
+          new Intl.NumberFormat("vi-VN").format(dailyRevenue) + "đ";
 
-    const startButton = tableElement.querySelector(".table__start");
-    if (tableElement.classList.contains("table__playing")) {
-      const statusText = tableElement.querySelector(".table__status");
-      const timeCount = tableElement.querySelector(".table__timer");
-      handleTimer(tableElement, startButton, statusText, timeCount);
+      // Lưu vào lịch sử
+      const invoice = {
+        id: Date.now(),
+        time: new Date().toLocaleTimeString(),
+        tableName: tableElement.querySelector(".table__title").textContent,
+        total: tempTotal,
+        discount: discountAmount,
+        final: finalBill,
+        items: JSON.parse(JSON.stringify(tableMeals[currentTableID] || [])),
+        staff: "Thành Lợi",
+      };
+      invoiceHistory.unshift(invoice);
+
+      // Dừng bàn
+      const startButton = tableElement.querySelector(".table__start");
+
+      if (tableElement.classList.contains("table__playing")) {
+        const statusText = tableElement.querySelector(".table__status");
+        const timeCount = tableElement.querySelector(".table__timer");
+        handleTimer(tableElement, startButton, statusText, timeCount);
+      }
+
+      // Reset dữ liệu
+      tableElement.querySelector(".table__timer").textContent = "00:00:00";
+      if (tableElement.timerID) clearInterval(tableElement.timerID);
+      tableElement.currentSeconds = 0;
+
+      delete tableMeals[currentTableID];
+      delete tableStartTimes[currentTableID];
+      delete tableProgress[currentTableID];
+      delete tableDiscount[currentTableID];
+
+      elements.tableDetails.classList.remove("active");
+      currentTableID = null;
+      showToast("Thanh toán thành công: " + formattedBill + "đ" + "success");
     }
-    // Reset dữ liệu
-    tableElement.querySelector(".table__timer").textContent = "00:00:00";
-    if (tableElement.timerID) clearInterval(tableElement.timerID);
-    tableElement.currentSeconds = 0;
-
-    delete tableMeals[currentTableID];
-    delete tableStartTimes[currentTableID];
-    delete tableProgress[currentTableID];
-    delete tableDiscount[currentTableID];
-
-    elements.tableDetails.classList.remove("active");
-    currentTableID = null;
-  });
+  );
 });
 
 // Chuyển bàn
@@ -266,72 +477,75 @@ elements.moveTableBtn.addEventListener("click", () => {
           targetTableID = table.querySelector(".table__header").dataset.id;
         }
       });
+
+      if (!targetTableEl) {
+        showAlert("Không tìm thấy bàn: " + targetName);
+        return;
+      }
+
+      if (targetTableID === currentTableID) {
+        showAlert("Không thể chuyển sang chính nó!");
+        return;
+      }
+
+      // Kiểm tra bàn đích có đang bận không
+      if (
+        targetTableEl.classList.contains("table__playing") ||
+        (tableMeals[targetTableID] && tableMeals[targetTableID].length > 0)
+      ) {
+        showAlert("Bàn đích đang có người chơi hoặc chưa thanh toán!");
+        return;
+      }
+
+      showConfirm(`Chuyển tất cả từ bàn hiện sang ${targetName}?`, () => {
+        tableMeals[targetTableID] = JSON.parse(
+          JSON.stringify(tableMeals[currentTableID] || [])
+        );
+        if (tableDiscount[currentTableID])
+          tableDiscount[targetTableID] = tableDiscount[currentTableID];
+
+        const currentTableEl = document
+          .querySelector(`.table__header[data-id="${currentTableID}"]`)
+          .closest(".table");
+
+        if (currentTableEl.classList.contains("table__playing")) {
+          const currentSeconds = currentTableEl.currentSeconds || 0;
+
+          clearInterval(currentTableEl.timerID);
+
+          currentTableEl.classList.remove("table__playing");
+
+          currentTableEl.querySelector(".table__status").textContent = "Trống";
+          currentTableEl.querySelector(".table__start").textContent = "Start";
+          currentTableEl.querySelector(".table__timer").textContent =
+            "00:00:00";
+          currentTableEl.currentSeconds = 0;
+
+          currentPlaying--;
+          elements.playingCount.textContent = currentPlaying;
+
+          const startBtnNew = targetTableEl.querySelector(".table__start");
+          const statusNew = targetTableEl.querySelector(".table__status");
+          const timerNew = targetTableEl.querySelector(".table__timer");
+
+          targetTableEl.currentSeconds = currentSeconds;
+          handleTimer(targetTableEl, startBtnNew, statusNew, timerNew);
+        } else {
+          currentTableEl.querySelector(".table__status").textContent = "Trống";
+          currentTableEl.classList.remove("table__playing");
+        }
+
+        delete tableMeals[currentTableID];
+        delete tableStartTimes[currentTableID];
+        delete tableProgress[currentTableID];
+        delete tableDiscount[currentTableID];
+
+        elements.tableDetails.classList.remove("active");
+        currentTableID = null;
+        showToast("Chuyển bàn thành công!", "success");
+      });
     }
   );
-
-  if (!targetTableEl) {
-    alert("Không tìm thấy bàn: " + targetName);
-    return;
-  }
-
-  if (targetTableID === currentTableID) {
-    alert("Không thể chuyển sang chính nó!");
-    return;
-  }
-
-  // Kiểm tra bàn đích có đang bận không
-  if (
-    targetTableEl.classList.contains("table__playing") ||
-    (tableMeals[targetTableID] && tableMeals[targetTableID].length > 0)
-  ) {
-    alert("Bàn đích đang có người chơi hoặc chưa thanh toán!");
-    return;
-  }
-
-  if (!confirm(`Chuyển tất cả từ bàn hiện tại sang [${targetName}]?`)) return;
-
-  // chuyển món ăn
-  tableMeals[targetTableID] = JSON.parse(
-    JSON.stringify(tableMeals[currentTableID] || [])
-  );
-  const currentTableEl = document
-    .querySelector(`.table__header[data-id="${currentTableID}"]`)
-    .closest(".table");
-
-  if (currentTableEl.classList.contains("table__playing")) {
-    const currentSeconds = currentTableEl.currentSeconds || 0;
-
-    clearInterval(currentTableEl.timerID);
-    currentTableEl.classList.remove("table__playing");
-    currentTableEl.querySelector(".table__start").textContent = "Trống";
-    currentTableEl.querySelector(".table__start").textContent = "Start";
-    currentTableEl.querySelector(".table__timer").textContent = "00:00:00";
-    currentTableEl.currentSeconds = 0;
-
-    currentPlaying--;
-    elements.playingCount.textContent = currentPlaying;
-
-    const startBtnNew = targetTableEl.querySelector(".table__start");
-    const statusNew = targetTableEl.querySelector(".table__status");
-    const timerNew = targetTableEl.querySelector(".table__timer");
-
-    targetTableEl.currentSeconds = currentSeconds;
-    handleTimer(targetTableEl, startBtnNew, statusNew, timerNew);
-  } else {
-    currentTableEl.querySelector(".table__status").textContent = "Trống";
-    currentTableEl.classList.remove("table__playing");
-  }
-
-  // Xóa dữ liệu bàn cũ
-  delete tableMeals[currentTableID];
-  delete tableStartTimes[currentTableID];
-  delete tableProgress[currentTableID];
-  delete tableDiscount[currentTableID];
-
-  // đóng modal và thông báo
-  elements.tableDetails.classList.remove("active");
-  currentTableID = null;
-  alert("Chuyển bàn thành công!");
 });
 
 // ==================== Details Menu HTML ============================
@@ -463,7 +677,7 @@ function renderOrderItems() {
   elements.detailsOrder.innerHTML = html;
 
   const discountPercent = tableDiscount[currentTableID] || 0;
-  const discountAmount = (totalPrice * discountPercent) / 100;
+  const discountAmount = Math.ceil(totalPrice * discountPercent) / 100;
   const finalPrice = totalPrice - discountAmount;
 
   // Hiển Thị Tổng Tiền
@@ -495,15 +709,23 @@ function openTableDetails(tableElement) {
   const tableTime = tableElement.querySelector(".table__timer").textContent;
   const isPlaying = tableElement.classList.contains("table__playing");
 
+  const startTimeInput = document.getElementById("summary-start-time");
+  if (tableStartTimes[currentTableID]) {
+    startTimeInput.value = tableStartTimes[currentTableID];
+  } else {
+    startTimeInput.value = getCurrentTime();
+  }
+
+  if (isPlaying) {
+    startTimeInput.disabled = false;
+    startTimeInput.style.cursor = "pointer";
+  } else {
+    startTimeInput.disabled = true;
+    startTimeInput.style.cursor = "default";
+  }
+
   elements.detailsTableTitle.textContent = `${tableTitle} - Chi tiết`;
   elements.summaryTime.textContent = tableTime;
-
-  // Hiển thị giờ bắt đầu
-  if (tableStartTimes[currentTableID]) {
-    elements.summaryStartTime.textContent = tableStartTimes[currentTableID];
-  } else {
-    elements.summaryStartTime.textContent = getCurrentTime();
-  }
 
   // Cập nhật nút Start/Stop
   if (isPlaying) {
@@ -658,14 +880,25 @@ elements.startStopBtn?.addEventListener("click", () => {
 
   // Cập nhật lại giao diện modal
   const isPlaying = tableElement.classList.contains("table__playing");
+
+  const timeInput = document.getElementById("summary-start-time");
+
   if (isPlaying) {
     elements.startStopBtn.textContent = "Dừng lại";
     elements.startStopBtn.classList.add("btn-stop");
     elements.startStopBtn.classList.remove("btn-start");
+    if (timeInput) {
+      timeInput.disabled = false;
+      timeInput.style.cursor = "pointer";
+    }
   } else {
     elements.startStopBtn.textContent = "Bắt đầu";
     elements.startStopBtn.classList.add("btn-start");
     elements.startStopBtn.classList.remove("btn-stop");
+    if (timeInput) {
+      timeInput.disabled = true;
+      timeInput.style.cursor = "default";
+    }
   }
 });
 
@@ -914,21 +1147,23 @@ function handleTimer(tableContainer, startButton, statusText, timeCount) {
     currentPlaying++;
     elements.playingCount.textContent = currentPlaying;
 
-    // Lấy số giây cũ để chạy tiếp, hoặc bắt đầu từ 0
-    let second = tableContainer.currentSeconds || 0;
-
     tableContainer.timerID = setInterval(() => {
-      // lưu số giây hiện tại
-      tableContainer.currentSeconds = second;
-      timeCount.textContent = formatTime(++second);
+      // Lấy số giấy hiện tại trực tiếp từ thẻ HTML
+      let currentVal = tableContainer.currentSeconds || 0;
+      // cộng thêm 1 giây
+      currentVal++;
+      // lưu ngược lại
+      tableContainer.currentSeconds = currentVal;
+      // Hiện thị
+      timeCount.textContent = formatTime(currentVal);
 
       if (tableMeals[tableID]) {
         const tableItem = tableMeals[tableID].find(
           (item) => item.category === "table"
         );
         if (tableItem) {
-          const hoursPlayed = second / 3600;
-          tableItem.totalPrice = Math.round(hoursPlayed * tableItem.price);
+          const hoursPlayed = currentVal / 3600;
+          tableItem.totalPrice = Math.ceil(hoursPlayed * tableItem.price);
         }
       }
 
@@ -937,7 +1172,7 @@ function handleTimer(tableContainer, startButton, statusText, timeCount) {
         currentTableID === tableID &&
         elements.tableDetails.classList.contains("active")
       ) {
-        elements.summaryTime.textContent = formatTime(second);
+        elements.summaryTime.textContent = formatTime(currentVal);
         renderOrderItems();
       }
     }, 1000);

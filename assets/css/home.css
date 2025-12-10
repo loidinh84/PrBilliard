@@ -1286,9 +1286,11 @@ body {
   color: #4a5568;
 }
 
-.summary-line span:last-child {
+.summary-line span:first-child {
+  white-space: nowrap;
   font-weight: 600;
   color: #2d3748;
+  margin-right: 10px;
 }
 
 .summary-line.total {
@@ -1450,8 +1452,11 @@ body {
 }
 
 .toast-icon {
-  margin-right: 15px;
-  font-size: 1.5rem;
+  width: 24px;
+  height: 24px;
+  margin-right: 12px;
+  object-fit: contain;
+  display: block;
 }
 
 .toast-message {
@@ -1534,6 +1539,178 @@ body {
   font-size: 1.2rem;
   margin-top: 8px;
   display: none;
+}
+
+/* ====================Modal history=============== */
+.history-table-container {
+  overflow-x: auto;
+  margin-bottom: 20px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1.4rem;
+  min-width: 600px;
+}
+
+.history-table th {
+  background-color: #f7f8fa;
+  color: #4a55a2;
+  font-weight: 600;
+  text-align: left;
+  padding: 15px;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.history-table td {
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+  color: #333;
+}
+
+.history-table tr:last-child td {
+  border-bottom: none;
+}
+
+.history-table tr:hover {
+  background-color: #f8fafc;
+}
+
+.col-discount {
+  color: #e53e3e;
+}
+
+.col-total {
+  font-weight: 600;
+  color: #2b6cb0;
+}
+
+.history-empty {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+  font-style: italic;
+}
+
+/* ===========================Invoice detail modal==================== */
+.inv-header-info {
+  padding: 10px 0;
+  border-bottom: 1px dashed #ccc;
+  margin-bottom: 15px;
+  line-height: 1.6;
+}
+
+.inv-list-container {
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 8px;
+  max-height: 350px;
+  overflow-y: auto;
+  border: 1px solid #eee;
+}
+
+.inv-table {
+  width: 100%;
+  font-size: 1.3rem;
+  border-collapse: collapse;
+}
+
+.inv-table th {
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 8px;
+  color: #666;
+  font-weight: 600;
+}
+
+.inv-row {
+  border-bottom: 1px dashed #eee;
+}
+
+.inv-row td {
+  padding: 10px 0;
+  color: #333;
+}
+
+.col-inv-name {
+  text-align: left;
+}
+
+.col-inv-qty {
+  text-align: center;
+  width: 50px;
+}
+
+.col-inv-price {
+  text-align: right;
+  font-weight: 500;
+}
+
+.inv-footer {
+  margin-top: 20px;
+  text-align: right;
+  font-size: 1.4rem;
+  line-height: 1.8rem;
+}
+
+.inv-footer .discount {
+  color: #e53e3e;
+}
+
+.inv-footer .final {
+  font-weight: 700;
+  font-size: 1.8rem;
+  color: #4a55a2;
+  margin-top: 5px;
+  display: block;
+}
+
+.col-action-center {
+  text-align: center;
+}
+
+/* Thay đổi thời gian chơi */
+.modal__content .time-input-clean {
+  border: none;
+  background: transparent;
+  outline: none;
+
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+
+  width: auto;
+  min-width: 60px;
+  margin-left: auto;
+
+  cursor: pointer;
+  text-align: right;
+
+  padding: 0;
+  margin: 0;
+}
+
+/* Ẩn icon đồng hồ*/
+.time-input-clean::-webkit-calendar-picker-indicator {
+  display: none;
+}
+
+/* Hiệu ứng Hover */
+.time-input-clean:hover:not(:disabled) {
+  background-color: #f0f4ff;
+  color: #4a55a2;
+}
+
+/* Trạng thái Disabled */
+.time-input-clean:disabled {
+  color: #999;
+  cursor: default;
+  background: transparent !important;
 }
 
 /* Chrome, Safari, Edge, Opera - Ẩn spinner */

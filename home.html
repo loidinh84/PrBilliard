@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="./assets/css/reset.css" />
     <link rel="stylesheet" href="./assets/css/home.css" />
+
     <title>Quản Lý Billiards</title>
   </head>
   <body>
@@ -81,7 +82,17 @@
               </button>
             </div>
             <div class="manage-menu">
-              <button class="manage-menu-btn" id="manage-menu-btn">
+              <button type="button" class="manage-menu-btn" id="history-btn">
+                <img src="./assets/icon/history.svg" alt="History" />
+                <span>Lịch sử</span>
+              </button>
+            </div>
+            <div class="manage-menu">
+              <button
+                type="button"
+                class="manage-menu-btn"
+                id="manage-menu-btn"
+              >
                 <img src="./assets/icon/mangage.svg" alt="Manage" />
                 <span>Quản lý Menu</span>
               </button>
@@ -187,7 +198,12 @@
             <div class="order-summary">
               <div class="summary-line">
                 <span>Giờ bắt đầu:</span>
-                <span id="summary-start-time">--:--</span>
+                <input
+                  type="time"
+                  id="summary-start-time"
+                  class="time-input-clean"
+                  aria-label="Thay đổi thời gian"
+                />
               </div>
               <div class="summary-line">
                 <span>Tổng giờ chơi:</span>
@@ -268,6 +284,7 @@
       </div>
     </div>
     <!-- Modal in detail table -->
+    <!-- confirm info -->
     <div class="table-modal custom-modal" id="custom-confirm-modal">
       <div class="modal__content modal-sm text-center">
         <h2 class="text-danger">Xác nhận</h2>
@@ -282,10 +299,17 @@
         </div>
       </div>
     </div>
+    <!-- Input info -->
     <div class="table-modal custom-modal z-high" id="custom-prompt-modal">
       <div class="modal__content modal-md">
         <h2 id="prompt-title">Nhập thông tin</h2>
-        <input  type="text" class="modal-input" id="prompt-input" title="Nhập thông tin" autocomplete="off"/>
+        <input
+          type="text"
+          class="modal-input"
+          id="prompt-input"
+          title="Nhập thông tin"
+          autocomplete="off"
+        />
         <p id="prompt-error" class="prompt-error">Vui lòng nhập thông tin!</p>
         <div class="modal__action">
           <button type="button" class="btn-cancel" id="btn-prompt-cancel">
@@ -297,19 +321,100 @@
         </div>
       </div>
     </div>
+    <!-- noti info -->
     <div class="table-modal custom-modal z-high" id="custom-alert-modal">
       <div class="modal__content modal-sm text-center">
         <h2 class="text-primary">Thông báo</h2>
         <p id="alert-message" class="modal-msg"></p>
         <div class="modal__action justify-center">
-          <button class="btn-submit w-full" id="btn-alert-ok" type="button">OK</button>
+          <button class="btn-submit w-full" id="btn-alert-ok" type="button">
+            OK
+          </button>
         </div>
       </div>
     </div>
+
     <div id="toast-container"></div>
+
+    <!-- Modal history -->
+    <div class="table-modal custom-modal z-high" id="history-modal">
+      <div class="modal__content modal__xlarge">
+        <div class="modal__header">
+          <h2>Lịch sử giao dịch</h2>
+          <button
+            type="button"
+            class="modal-close-btn"
+            id="close-history-modal"
+          >
+            &times;
+          </button>
+        </div>
+
+        <div class="history-table-container">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Thời gian</th>
+                <th>Bàn</th>
+                <th>Tổng tiền</th>
+                <th>Giảm giá</th>
+                <th>Thực thu</th>
+              </tr>
+            </thead>
+            <tbody id="history-list"></tbody>
+          </table>
+        </div>
+        <div class="modal__action">
+          <button type="button" class="btn-cancel" id="close-history-btn">
+            Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Modal Chi tiết hóa đơn -->
+    <div class="table-modal custom-modal z-high" id="invoice-detail-modal">
+      <div class="modal__content modal-md">
+        <div class="modal__header">
+          <h2>Chi tiết hóa đơn <span id="inv-detail-id"></span></h2>
+          <button type="button" class="modal-close-btn" id="close-inv-detail">
+            &times;
+          </button>
+        </div>
+
+        <div class="inv-header-info">
+          <p><strong>Bàn:</strong> <span id="inv-detail-table"></span></p>
+          <p><strong>Thời gian:</strong> <span id="inv-detail-time"></span></p>
+          <p><strong>Thu ngân:</strong> <span id="inv-detail-staff"></span></p>
+        </div>
+
+        <div class="inv-list-container">
+          <table class="inv-table">
+            <thead>
+              <tr>
+                <th>Món</th>
+                <th>SL</th>
+                <th>Thành tiền</th>
+              </tr>
+            </thead>
+            <tbody id="inv-detail-list"></tbody>
+          </table>
+        </div>
+        <div class="inv-footer">
+          <p>Tổng cộng: <span id="inv-detail-total"></span></p>
+          <p>Giảm giá: <span id="inv-detail-discount"></span></p>
+          <p>Thực thu: <span id="inv-detail-final"></span></p>
+        </div>
+        <div class="modal__action">
+          <button
+            type="button"
+            class="btn-submit w-full"
+            id="print-invoice-btn"
+          >
+            In hóa đơn
+          </button>
+        </div>
+      </div>
+    </div>
     <script src="./assets/js/home.js"></script>
   </body>
 </html>
-
-
-
