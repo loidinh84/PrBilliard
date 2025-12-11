@@ -51,6 +51,15 @@ const elements = {
   closeHistoryModal: document.getElementById("close-history-modal"),
   closeHistoryBtn: document.getElementById("close-history-btn"),
   historyList: document.getElementById("history-list"),
+  // Sidebar
+  sidebar: document.getElementById("right-sidebar"),
+  overlay: document.getElementById("sidebar-overlay"),
+  openBtn: document.getElementById("open-sidebar"),
+  closeBtn: document.getElementById("close-sidebar"),
+  // Các nút trong sidebar
+  sidebarAddTable: document.getElementById("sidebar-add-table"),
+  sidebarManageMenu: document.getElementById("manage-menu-btn"),
+  sidebarHistory: document.getElementById("history-btn"),
 };
 
 let currentPlaying = 0;
@@ -79,6 +88,74 @@ let menuData = [
   { id: 5, name: "Bàn Phăng - 1 giờ", price: 60000, category: "table" },
 ];
 
+// ===========================Sidebar controller=============================
+function openSidebar() {
+  if (elements.sidebar) elements.sidebar.classList.add("active");
+  if (elements.overlay) elements.overlay.classList.add("active");
+}
+
+function closeSidebar() {
+  if (elements.sidebar) elements.sidebar.classList.remove("active");
+  if (elements.overlay) elements.overlay.classList.remove("active");
+}
+
+if (elements.openBtn) {
+  elements.openBtn.addEventListener("click", openSidebar);
+}
+
+if (elements.closeBtn) {
+  elements.closeBtn.addEventListener("click", closeSidebar);
+}
+
+if (elements.overlay) {
+  elements.overlay.addEventListener("click", closeSidebar);
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    closeSidebar();
+    const activeModals = document.querySelectorAll(".table-modal.active");
+    activeModals.forEach((modal) => modal.classList.remove("active"));
+    tableDelete = null;
+    itemDeleteID = null;
+    currentTableID = null;
+  }
+});
+
+// =========================== Sidebar Menu Handlers ===========================
+
+// 1. Thêm bàn mới
+if (elements.sidebarAddTable) {
+  elements.sidebarAddTable.addEventListener("click", () => {
+    closeSidebar();
+    tableUpdate = null;
+    elements.modalTitle.textContent = "Thêm bàn mới";
+    elements.modalUpdate.textContent = "Thêm";
+    elements.tableName.value = "";
+    elements.tableType.value = "";
+    elements.modal.classList.add("active");
+  });
+}
+
+// 2. Quản lý menu
+// Lưu ý: Dùng manageMenuBtn chung cho cả Sidebar và Header (nếu có)
+if (elements.manageMenuBtn) {
+  elements.manageMenuBtn.addEventListener("click", () => {
+    closeSidebar();
+    renderMenu();
+    elements.manageMenuModal.classList.add("active");
+  });
+}
+
+// 3. Lịch sử
+if (elements.historyBtn) {
+  elements.historyBtn.addEventListener("click", () => {
+    closeSidebar();
+    renderHistory();
+    elements.historyModal.classList.add("active");
+  });
+}
+
 // ===========================Change time====================================
 
 const timeInput = document.getElementById("summary-start-time");
@@ -100,14 +177,11 @@ timeInput.addEventListener("change", (e) => {
 
   // tính thời gian mới
   const now = new Date();
-  const [hours, minutes] = newTimeStr.split(":").map(Number);
+  const newStartDate = new Date(newTimeStr);
 
-  // Tạo mốc thời gian bắt đầu mới
-  const newStartDate = new Date();
-  newStartDate.setHours(hours, minutes, 0, 0);
+  let diffSeconds = Math.floor((now - newStartDate) / 1000);
 
   // Tính khoảng cách từ bắt đầu đến hiện tại
-  let diffSeconds = Math.floor((now - newStartDate) / 1000);
 
   // Validate: không được chọn giờ tương lai
   if (diffSeconds < 0) {
@@ -130,7 +204,7 @@ timeInput.addEventListener("change", (e) => {
     );
     if (tableItem) {
       const hoursPlayed = diffSeconds / 3600;
-      tableItem.totalPrice = Math.ceil(hoursPlayed * tableItem.price);
+      tableItem.totalPrice = roundMoney(hoursPlayed * tableItem.price);
     }
   }
 
@@ -140,25 +214,20 @@ timeInput.addEventListener("change", (e) => {
 });
 
 // ============================History Manager===================================
-if (elements.historyBtn) {
-  document.getElementById("history-btn").addEventListener("click", () => {
-    renderHistory();
-    document.getElementById("history-modal").classList.add("active");
+if (elements.closeHistoryModal) {
+  elements.closeHistoryModal.addEventListener("click", () => {
+    elements.historyModal.classList.remove("active");
   });
 }
-
-document.getElementById("close-history-modal").addEventListener("click", () => {
-  document.getElementById("history-modal").classList.remove("active");
-});
-
-document.getElementById("close-history-btn").addEventListener("click", () => {
-  document.getElementById("history-modal").classList.remove("active");
-});
+if (elements.closeHistoryBtn) {
+  elements.closeHistoryBtn.addEventListener("click", () => {
+    elements.historyModal.classList.remove("active");
+  });
+}
 
 function renderHistory() {
   const list = document.getElementById("history-list");
   if (!list) return;
-
   list.innerHTML = "";
 
   if (invoiceHistory.length === 0) {
@@ -170,18 +239,16 @@ function renderHistory() {
     const row = document.createElement("tr");
     row.style.cursor = "pointer";
 
+    const invoiceCode = `HD${inv.id.toString().slice(-6)}`;
+    const finalMoney = new Intl.NumberFormat("vi-VN").format(inv.final);
+
     row.innerHTML = `
-        <td>${inv.time}</td>
+        <td><span class="code-text">${invoiceCode}</span></td>
+        <td style="color: #555;">${inv.time}</td>
         <td style="font-weight: 500;">${inv.tableName}</td>
-        <td>${new Intl.NumberFormat("vi-VN").format(inv.total)}đ</td>
-        <td class="col-discount">-${new Intl.NumberFormat("vi-VN").format(
-          inv.discount
-        )}đ</td>
-        <td class="col-total">${new Intl.NumberFormat("vi-VN").format(
-          inv.final
-        )}đ</td>
-        <td style="text-align: center;">
-            <span class="material-symbols-rounded" style="color: #666;">visibility</span>
+        <td>Khách lẻ</td> <td class="text-right money-text">${finalMoney}</td>
+        <td class="text-right">${finalMoney}</td> <td class="text-center">
+            <span class="status-badge status-success">Hoàn thành</span>
         </td>
     `;
     row.addEventListener("click", () => showInvoiceDetail(inv));
@@ -190,7 +257,9 @@ function renderHistory() {
 }
 
 function showInvoiceDetail(invoice) {
-  document.getElementById("inv-detail-id").textContent = `${invoice.id}`;
+  document.getElementById("inv-detail-id").textContent = getInvoiceCode(
+    invoice.id
+  );
   document.getElementById("inv-detail-table").textContent = invoice.tableName;
   document.getElementById("inv-detail-time").textContent = invoice.time;
   document.getElementById("inv-detail-staff").textContent =
@@ -422,7 +491,7 @@ elements.checkoutBtn.addEventListener("click", () => {
       // Lưu vào lịch sử
       const invoice = {
         id: Date.now(),
-        time: new Date().toLocaleTimeString(),
+        time: new Date().toLocaleString("vi-VN"),
         tableName: tableElement.querySelector(".table__title").textContent,
         total: tempTotal,
         discount: discountAmount,
@@ -701,6 +770,16 @@ function renderOrderItems() {
 }
 
 // ==================== Open Table Details ============================
+function getCurrentDateTimeInput() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
 function openTableDetails(tableElement) {
   const tableHeader = tableElement.querySelector(".table__header");
   currentTableID = tableHeader.dataset.id;
@@ -710,10 +789,11 @@ function openTableDetails(tableElement) {
   const isPlaying = tableElement.classList.contains("table__playing");
 
   const startTimeInput = document.getElementById("summary-start-time");
+
   if (tableStartTimes[currentTableID]) {
     startTimeInput.value = tableStartTimes[currentTableID];
   } else {
-    startTimeInput.value = getCurrentTime();
+    startTimeInput.value = getCurrentDateTimeInput();
   }
 
   if (isPlaying) {
@@ -978,6 +1058,7 @@ function loadMenu() {
 
 // ==================== Handlers Menu ========================
 elements.manageMenuBtn.addEventListener("click", () => {
+  closeSidebar();
   renderMenu();
   elements.manageMenuModal.classList.add("active");
 });
@@ -1086,19 +1167,16 @@ function formatTime(countTime) {
     .join(":");
 }
 
-function getCurrentTime() {
-  const now = new Date();
-  const hours = String(now.getHours()).padStart(2, "0");
-  const minutes = String(now.getMinutes()).padStart(2, "0");
-  return `${hours}:${minutes}`;
-}
-
 function closeAllMenu(currentMenu = null) {
   document.querySelectorAll(".table__menu.active").forEach((menu) => {
     if (menu !== currentMenu) {
       menu.classList.remove("active");
     }
   });
+}
+
+function getInvoiceCode(id) {
+  return `HD${id}`;
 }
 
 // ==================== Table HTML Template ====================
@@ -1132,6 +1210,9 @@ function createTableHTML(name, type) {
 }
 
 // ==================== Table Timer Handler ====================
+function roundMoney(amount) {
+  return Math.ceil(amount / 1000) * 1000;
+}
 function handleTimer(tableContainer, startButton, statusText, timeCount) {
   const playing = tableContainer.classList.toggle("table__playing");
   const tableHeader = tableContainer.querySelector(".table__header");
@@ -1142,7 +1223,7 @@ function handleTimer(tableContainer, startButton, statusText, timeCount) {
     statusText.textContent = "Đang chơi";
 
     if (!tableStartTimes[tableID]) {
-      tableStartTimes[tableID] = getCurrentTime();
+      tableStartTimes[tableID] = getCurrentDateTimeInput();
     }
     currentPlaying++;
     elements.playingCount.textContent = currentPlaying;
@@ -1163,7 +1244,7 @@ function handleTimer(tableContainer, startButton, statusText, timeCount) {
         );
         if (tableItem) {
           const hoursPlayed = currentVal / 3600;
-          tableItem.totalPrice = Math.ceil(hoursPlayed * tableItem.price);
+          tableItem.totalPrice = roundMoney(hoursPlayed * tableItem.price);
         }
       }
 
@@ -1195,14 +1276,18 @@ elements.menuToggle.addEventListener("click", (e) => {
 });
 
 // Modal handlers
-elements.addBtn.addEventListener("click", () => {
-  tableUpdate = null;
-  elements.modalTitle.textContent = "Thêm bàn mới";
-  elements.modalUpdate.textContent = "Thêm";
-  elements.tableName.value = "";
-  elements.tableType.value = "";
-  elements.modal.classList.add("active");
-});
+if (elements.sidebarAddTable) {
+  elements.sidebarAddTable.addEventListener("click", () => {
+    closeSidebar();
+
+    tableUpdate = null;
+    elements.modalTitle.textContent = "Thêm bàn mới";
+    elements.modalUpdate.textContent = "Thêm";
+    elements.tableName.value = "";
+    elements.tableType.value = "";
+    elements.modal.classList.add("active");
+  });
+}
 
 elements.cancelBtn.addEventListener("click", () => {
   elements.modal.classList.remove("active");

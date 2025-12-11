@@ -14,6 +14,7 @@
       <header class="header">
         <a href="index.html" class="header-left">Home</a>
         <!-- header top -->
+
         <div class="header-right">
           <!-- User -->
           <div class="user-info">
@@ -24,6 +25,7 @@
               class="user-avatar"
             />
           </div>
+
           <!-- Menu user -->
           <div class="drop-menu" id="menu-container">
             <button class="drop-toggle" id="menu-toggle">
@@ -53,6 +55,14 @@
               >
             </div>
           </div>
+
+          <button type="button" class="menu-toggle-btn" id="open-sidebar">
+            <img
+              src="./assets/icon/grid_view.svg"
+              alt="Quản lý Menu"
+              class="material-symbols-rounded"
+            />
+          </button>
         </div>
       </header>
       <main class="main">
@@ -73,34 +83,83 @@
         </section>
         <!-- main action -->
         <section class="table-section">
-          <!-- add table -->
-          <div class="table-section-header">
-            <div class="add-table">
-              <button type="button" class="plus" id="add-table-plus">
-                <img src="./assets/icon/add.svg" alt="Plus" />
-                <span>Thêm bàn</span>
-              </button>
-            </div>
-            <div class="manage-menu">
-              <button type="button" class="manage-menu-btn" id="history-btn">
-                <img src="./assets/icon/history.svg" alt="History" />
-                <span>Lịch sử</span>
-              </button>
-            </div>
-            <div class="manage-menu">
-              <button
-                type="button"
-                class="manage-menu-btn"
-                id="manage-menu-btn"
-              >
-                <img src="./assets/icon/mangage.svg" alt="Manage" />
-                <span>Quản lý Menu</span>
-              </button>
-            </div>
-          </div>
           <div class="table__list"></div>
         </section>
       </main>
+    </div>
+    <!-- Sidebar -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <div class="right-sidebar" id="right-sidebar">
+      <div class="sidebar-header">
+        <h3>Menu Quản lý</h3>
+        <button type="button" class="close-sidebar-btn" id="close-sidebar">
+          <img
+            src="./assets/icon/close.svg"
+            alt="Tắt"
+            class="material-symbols-rounded"
+          />
+        </button>
+      </div>
+
+      <div class="sidebar-content">
+        <button type="button" class="sidebar-item" id="sidebar-add-table">
+          <img
+            src="./assets/icon/add_circle.svg"
+            alt="Thêm"
+            class="material-symbols-rounded"
+          />
+          <span>Thêm bàn mới</span>
+        </button>
+
+        <button type="button" class="sidebar-item" id="manage-menu-btn">
+          <img
+            src="./assets/icon/resMenu.svg"
+            alt="Thực đơn"
+            class="material-symbols-rounded"
+          />
+          <span>Quản lý thực đơn</span>
+        </button>
+
+        <button type="button" class="sidebar-item" id="history-btn">
+          <img
+            src="./assets/icon/history.svg"
+            alt="Lịch sử"
+            class="material-symbols-rounded"
+          />
+          <span>Lịch sự giao dịch</span>
+        </button>
+
+        <div class="sidebar-divider"></div>
+
+        <button type="button" class="sidebar-item" id="sidebar-reports">
+          <img
+            src="./assets/icon/baocao.svg"
+            alt="Báo cáo doanh thu"
+            class="material-symbols-rounded"
+          />
+          <span>Báo cáo doanh thu</span>
+        </button>
+
+        <button type="button" class="sidebar-item" id="sidebar-customers">
+          <img
+            src="./assets/icon/group.svg"
+            alt="Khách hàng"
+            class="material-symbols-rounded"
+          />
+          <span>Quản lý khách hàng</span>
+        </button>
+      </div>
+
+      <div class="sidebar-footer">
+        <button type="button" class="sidebar-item" id="settings-btn">
+          <img
+            src="./assets/icon/setting.svg"
+            alt="Cài đặt"
+            class="material-symbols-rounded"
+          />
+          <span>Cài đặt hệ thống</span>
+        </button>
+      </div>
     </div>
     <!-- create table -->
     <div class="table-modal" id="add-table-modal">
@@ -125,23 +184,6 @@
         </form>
       </div>
     </div>
-    <!--delete table -->
-    <div class="table-modal" id="delete-confirm">
-      <div class="modal__content">
-        <h2>Xác nhận xóa</h2>
-        <p>
-          Bạn có chắc chắn muốn xóa <strong id="delete__table"></strong> không?
-        </p>
-        <div class="modal__action">
-          <button type="button" class="btn-cancel" id="btn__cancel__delete">
-            Hủy
-          </button>
-          <button type="button" class="btn-delete" id="btn__confirm__delete">
-            Xóa
-          </button>
-        </div>
-      </div>
-    </div>
     <!-- manage Menu -->
     <div class="table-modal" id="manage-menu-modal">
       <div class="modal__content modal__large">
@@ -158,6 +200,23 @@
         </div>
 
         <div class="menu-item-list grid-view" id="menu-item-list"></div>
+      </div>
+    </div>
+    <!--delete table -->
+    <div class="table-modal" id="delete-confirm">
+      <div class="modal__content">
+        <h2>Xác nhận xóa</h2>
+        <p>
+          Bạn có chắc chắn muốn xóa <strong id="delete__table"></strong> không?
+        </p>
+        <div class="modal__action">
+          <button type="button" class="btn-cancel" id="btn__cancel__delete">
+            Hủy
+          </button>
+          <button type="button" class="btn-delete" id="btn__confirm__delete">
+            Xóa
+          </button>
+        </div>
       </div>
     </div>
     <!-- detail bill -->
@@ -199,7 +258,7 @@
               <div class="summary-line">
                 <span>Giờ bắt đầu:</span>
                 <input
-                  type="time"
+                  type="datetime-local"
                   id="summary-start-time"
                   class="time-input-clean"
                   aria-label="Thay đổi thời gian"
@@ -350,24 +409,54 @@
           </button>
         </div>
 
+        <div class="history-toolbar">
+          <div class="search-group">
+            <img
+              src="./assets/icon/search.svg"
+              alt="Tìm kiếm"
+              class="material-symbols-rounded search-icon"
+            />
+            <input type="text" placeholder="Tìm theo mã hóa đơn, tên bàn..." />
+          </div>
+          <div class="filter-group">
+            <input type="date" class="history-date-picker" value="2025-01-01" title="Chọn ngày"/>
+            <button type="button" class="btn-export">
+              <img
+                src="./assets/icon/download.svg"
+                alt="Tải xuống"
+                class="material-symbols-rounded"
+              />
+              <span>Xuất file</span>
+            </button>
+          </div>
+        </div>
+
         <div class="history-table-container">
           <table class="history-table">
             <thead>
               <tr>
+                <th>Mã phiếu</th>
                 <th>Thời gian</th>
                 <th>Bàn</th>
-                <th>Tổng tiền</th>
-                <th>Giảm giá</th>
-                <th>Thực thu</th>
+                <th>Khách hàng</th>
+                <th>Tổng cộng</th>
+                <th>Khách trả</th>
+                <th>Trạng thái</th>
               </tr>
             </thead>
             <tbody id="history-list"></tbody>
           </table>
         </div>
-        <div class="modal__action">
-          <button type="button" class="btn-cancel" id="close-history-btn">
-            Đóng
-          </button>
+
+        <div class="history-footer">
+          <span>hiển thị 1 - 10 trên tổng số 50 kết quả</span>
+          <div class="pagination">
+            <button disabled>&lt;</button>
+            <button class="active">1</button>
+            <button>2</button>
+            <button>3</button>
+            <button>&gt;</button>
+          </div>
         </div>
       </div>
     </div>
@@ -415,6 +504,7 @@
         </div>
       </div>
     </div>
+
     <script src="./assets/js/home.js"></script>
   </body>
 </html>

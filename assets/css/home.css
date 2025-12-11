@@ -1542,58 +1542,188 @@ body {
 }
 
 /* ====================Modal history=============== */
-.history-table-container {
-  overflow-x: auto;
-  margin-bottom: 20px;
-  border: 1px solid #eee;
-  border-radius: 8px;
+.history-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 0 20px 0;
+  gap: 10px;
+  flex-wrap: nowrap;
+  margin-bottom: 0;
+  background: #fff;
 }
 
-.history-table {
+.search-group {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+
+.search-group input {
   width: 100%;
-  border-collapse: collapse;
-  font-size: 1.4rem;
-  min-width: 600px;
+  height: 45px;
+  padding: 0 10px 0 35px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 1.2rem;
 }
 
-.history-table th {
-  background-color: #f7f8fa;
-  color: #4a55a2;
-  font-weight: 600;
-  text-align: left;
-  padding: 15px;
-  border-bottom: 2px solid #e2e8f0;
+.search-group .search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #999;
+}
+
+.filter-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.history-date-picker {
+  height: 45px;
+  padding: 0 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-family: inherit;
+}
+
+.btn-export {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #24a05c;
+  color: #eee;
+  border: none;
+  padding: 0 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
   white-space: nowrap;
 }
 
-.history-table td {
-  padding: 15px;
-  border-bottom: 1px solid #eee;
-  color: #333;
+#history-modal .modal__content {
+  display: flex;
+  flex-direction: column;
+  height: 90vh;
+  padding: 0;
+  overflow: hidden;
 }
 
-.history-table tr:last-child td {
-  border-bottom: none;
+#history-modal .modal__header {
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+#history-modal .history-toolbar {
+  padding: 10px 20px;
+}
+
+.history-table-container {
+  flex: 1;
+  overflow-y: auto;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* 2. Bảng dữ liệu (Table) */
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1.3rem;
+}
+
+.history-table th {
+  background-color: #f0f2f5;
+  color: #333;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 1.1rem;
+  padding: 12px 15px;
+  border-bottom: 1px solid #dce0e4;
+  text-align: left;
+  position: sticky;
+  top: 0;
+}
+
+.history-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee; /* Chỉ kẻ ngang */
+  color: #1a1a1a;
 }
 
 .history-table tr:hover {
-  background-color: #f8fafc;
+  background-color: #f5faff; /* Hover màu xanh rất nhạt */
+  cursor: pointer;
 }
 
-.col-discount {
-  color: #e53e3e;
+/* Các loại text đặc biệt */
+.text-right {
+  text-align: right;
 }
-
-.col-total {
-  font-weight: 600;
-  color: #2b6cb0;
-}
-
-.history-empty {
+.text-center {
   text-align: center;
-  padding: 40px;
-  color: #999;
-  font-style: italic;
+}
+
+.code-text {
+  color: #007bff; /* Màu xanh link cho mã phiếu */
+  font-weight: 500;
+}
+
+.money-text {
+  font-weight: 700;
+  color: #333;
+}
+
+/* Badge trạng thái */
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.status-success {
+  background-color: #d1e7dd;
+  color: #0f5132;
+}
+
+/* 3. Footer phân trang */
+.history-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: #fff;
+  border-top: 1px solid #eee;
+  font-size: 1.3rem;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.pagination {
+  display: flex;
+  gap: 5px;
+}
+
+.pagination button {
+  padding: 5px 10px;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.pagination button.active {
+  background: #4a55a2;
+  color: white;
+  border-color: #4a55a2;
 }
 
 /* ===========================Invoice detail modal==================== */
@@ -1685,7 +1815,7 @@ body {
   color: #333;
 
   width: auto;
-  min-width: 60px;
+  min-width: 130px;
   margin-left: auto;
 
   cursor: pointer;
@@ -1711,6 +1841,127 @@ body {
   color: #999;
   cursor: default;
   background: transparent !important;
+}
+
+.menu-toggle-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: #fff;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.menu-toggle-btn:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1090;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.sidebar-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.right-sidebar {
+  position: fixed;
+  top: 0;
+  right: -300px;
+  width: 300px;
+  height: 100vh;
+  background: #fff;
+  z-index: 1100;
+  box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+  transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.right-sidebar.active {
+  right: 0;
+}
+
+.sidebar-header {
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8f9fa;
+}
+
+.sidebar-header h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #4a55a2;
+  margin: 0;
+}
+
+.close-sidebar-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-content {
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background-color: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  font-size: 1.2rem;
+  color: #333;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.sidebar-item:hover {
+  background: #f0f4ff;
+  border-color: #4a55a2;
+  color: #4a55a2;
+}
+
+.sidebar-item span.material-symbols-rounded {
+  color: #4a55a2;
+  font-size: 1.7rem;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background-color: #eee;
+  margin: 10px 0;
 }
 
 /* Chrome, Safari, Edge, Opera - Ẩn spinner */
