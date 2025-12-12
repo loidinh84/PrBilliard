@@ -522,7 +522,9 @@ elements.checkoutBtn.addEventListener("click", () => {
 
       elements.tableDetails.classList.remove("active");
       currentTableID = null;
-      showToast("Thanh toán thành công: " + formattedBill + "đ" + "success");
+      showToast("Thanh toán thành công: " + formattedBill + "đ");
+
+      saveData();
     }
   );
 });
@@ -612,6 +614,8 @@ elements.moveTableBtn.addEventListener("click", () => {
         elements.tableDetails.classList.remove("active");
         currentTableID = null;
         showToast("Chuyển bàn thành công!", "success");
+
+        saveData();
       });
     }
   );
@@ -767,6 +771,8 @@ function renderOrderItems() {
   } else {
     elements.summaryPrice.textContent = formattedTotal + "đ";
   }
+
+  saveData();
 }
 
 // ==================== Open Table Details ============================
@@ -1179,6 +1185,109 @@ function getInvoiceCode(id) {
   return `HD${id}`;
 }
 
+function saveData() {
+  // Lưu danh sách các bàn hiện có
+  const tablesList = [];
+  document.querySelectorAll(".table").forEach((el) => {
+    const header = el.querySelector(".table__header");
+    const body = el.querySelector(".table__body");
+
+    if (header && body) {
+      const id = header.dataset.id;
+      const name = header.querySelector(".table__title").textContent;
+      const typeText = body.querySelector(".table__type").textContent;
+      const type = typeText
+        .replace("Loại: ", "")
+        .replace("Loại bàn: ", "")
+        .trim();
+
+      tablesList.push({ id, name, type });
+    }
+  });
+
+  // Đóng gói tất cả dữ liệu
+  const dataToSave = {
+    menuData: menuData,
+    tablesList: tablesList,
+    tableMeals: tableMeals,
+    tableStartTimes: tableStartTimes,
+    tableDiscount: tableDiscount,
+    invoiceHistory: invoiceHistory,
+    dailyRevenue: dailyRevenue,
+    currentTables: currentTables,
+  };
+
+  // Lưu vào localStorage
+  localStorage.setItem("billiards_data", JSON.stringify(dataToSave));
+}
+
+function loadData() {
+  const savedJSON = localStorage.getItem("billiards_data");
+  if (!savedJSON) return;
+  const data = JSON.parse(savedJSON);
+
+  // Khôi phục dữ liệu
+  menuData = data.menuData || menuData;
+  tableMeals = data.tableMeals || {};
+  tableStartTimes = data.tableStartTimes || {};
+  tableDiscount = data.tableDiscount || {};
+  invoiceHistory = data.invoiceHistory || [];
+  dailyRevenue = data.dailyRevenue || 0;
+  currentTables = data.currentTables || 0;
+
+  // Cập nhật giao diện thống kê
+  if (elements.dailyRevenue) {
+    elements.dailyRevenue.textContent =
+      new Intl.NumberFormat("vi-VN").format(dailyRevenue) + "đ";
+  }
+
+  if (elements.tablesCount) elements.tablesCount.textContent = currentTables;
+
+  if (data.tablesList && data.tablesList.length > 0) {
+    elements.tableList.innerHTML = "";
+
+    data.tablesList.forEach((t) => {
+      const html = `
+        <div class="table">
+          <div class="table__header" data-id="${t.id}">
+            <h3 class="table__title">${t.name}</h3>
+            <div class="table__menu"><button class="table__toggle">⋮</button></div>
+        </div>
+        <div class="table__body">
+            <span>Giờ chơi: <span class="table__timer">00:00:00</span></span>
+              <span class="table__type">Loại: ${t.type}</span>
+              <span>Trạng thái: <span class="table__status">Trống</span></span>
+            </div>
+            <button class="table__start">Start</button>
+        </div>
+      `;
+      elements.tableList.insertAdjacentHTML("beforeend", html);
+
+      if (tableStartTimes[t.id]) {
+        const tableHeader = document
+          .querySelector(`.table__header[data-id="${t.id}"]`)
+          .closest(".table");
+
+        if (tableHeader) {
+          const tableEl = tableHeader.closest(".table");
+          const startBtn = tableEl.querySelector(".table__start");
+          const statusTxt = tableEl.querySelector(".table__status");
+          const timer = tableEl.querySelector(".table__timer");
+
+          const now = new Date();
+          const start = new Date(tableStartTimes[t.id]);
+          const diffSeconds = Math.floor((now - start) / 1000);
+
+          tableEl.currentSeconds = diffSeconds;
+          handleTimer(tableEl, startBtn, statusTxt, timer);
+        }
+      }
+    });
+  }
+}
+
+loadData();
+
 // ==================== Table HTML Template ====================
 function createTableHTML(name, type) {
   const tableID = Date.now();
@@ -1264,6 +1373,8 @@ function handleTimer(tableContainer, startButton, statusText, timeCount) {
 
     currentPlaying--;
     elements.playingCount.textContent = currentPlaying;
+
+    saveData();
   }
 }
 
@@ -1320,6 +1431,8 @@ elements.addTableForm.addEventListener("submit", (e) => {
   elements.tableName.value = "";
   elements.tableType.value = "";
   tableUpdate = null;
+
+  saveData();
 });
 
 // Button cancel confirm delete table
