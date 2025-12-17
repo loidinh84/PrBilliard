@@ -10,126 +10,100 @@ app.use(express.json());
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
-  password: "123456", // <-- Kiểm tra lại pass của bạn
+  password: "123456",
   database: "billiards_db",
 });
 
-// 2. Kết nối Database
 db.connect((err) => {
-  if (err) {
-    console.error("Lỗi kết nối MySQL:", err);
-    return;
-  }
-  console.log("Kết nối MySQL thành công!");
+  if (err) console.error("Lỗi kết nối MySQL:", err);
+  else console.log("Kết nối MySQL thành công!");
 });
 
 // ================= API ROUTES =================
 
-// API 1: LẤY DANH SÁCH BÀN (Tính toán số giây đã chơi)
+// API 1: LẤY DANH SÁCH BÀN
 app.get("/api/tables", (req, res) => {
-  const sql = `
-        SELECT 
-            id, 
-            name, 
-            type, 
-            status, 
-            DATE_FORMAT(start_time, '%Y-%m-%d %T') as start_time_str,
-            TIMESTAMPDIFF(SECOND, start_time, NOW()) as play_seconds 
-        FROM tables
-    `;
-
+  const sql = `SELECT id, name, type, status, DATE_FORMAT(start_time, '%Y-%m-%d %T') as start_time_str, TIMESTAMPDIFF(SECOND, start_time, NOW()) as play_seconds FROM tables`;
   db.query(sql, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results);
   });
 });
 
-// API 2: CẬP NHẬT TRẠNG THÁI (Start/Stop - Dùng giờ Server)
+// API 2: START / STOP
 app.put("/api/tables/:id", (req, res) => {
   const id = req.params.id;
   const { status } = req.body;
-
-  let sql = "";
-  let params = [];
-
-  // Nếu bấm Start -> MySQL tự lấy giờ hiện tại (NOW)
-  if (status === "Đang chơi") {
-    sql = "UPDATE tables SET status = ?, start_time = NOW() WHERE id = ?";
-    params = [status, id];
-  }
-  // Nếu bấm Stop -> Xóa giờ chơi (NULL)
-  else {
-    sql = "UPDATE tables SET status = ?, start_time = NULL WHERE id = ?";
-    params = [status, id];
-  }
-
-  db.query(sql, params, (err, result) => {
-    if (err) {
-      console.error("Lỗi cập nhật:", err);
-      return res.status(500).json({ error: "Lỗi Server khi cập nhật" });
-    }
-    res.json({ message: "Cập nhật thành công!" });
+  let sql =
+    status === "Đang chơi"
+      ? "UPDATE tables SET status = ?, start_time = NOW() WHERE id = ?"
+      : "UPDATE tables SET status = ?, start_time = NULL WHERE id = ?";
+  db.query(sql, [status, id], (err) => {
+    if (err) return res.status(500).json({ error: "Lỗi update status" });
+    res.json({ message: "Success" });
   });
 });
 
+// API 3: CẬP NHẬT GIỜ
 app.put("/api/tables/:id/update-time", (req, res) => {
   const id = req.params.id;
-  const { start_time } = req.body; // Nhận giờ mới từ Frontend (dạng chuỗi)
-
-  // Cập nhật vào Database
-  const sql = "UPDATE tables SET start_time = ? WHERE id = ?";
-
-  db.query(sql, [start_time, id], (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: "Lỗi cập nhật giờ" });
+  const { start_time } = req.body;
+  db.query(
+    "UPDATE tables SET start_time = ? WHERE id = ?",
+    [start_time, id],
+    (err) => {
+      if (err) return res.status(500).json({ error: "Lỗi update time" });
+      res.json({ message: "Success" });
     }
-    res.json({ message: "Đã cập nhật giờ thành công!" });
+  );
+});
+
+// ================= API MENU =================
+
+// 1. Lấy Menu
+app.get("/api/menu", (req, res) => {
+  db.query("SELECT * FROM menu", (err, results) => {
+    if (err) return res.status(500).json({ error: err.message }); // Báo lỗi chi tiết nếu chưa có bảng
+    res.json(results);
   });
 });
 
-// API 3: RESET DỮ LIỆU (Đưa hết về 0)
-app.get("/api/reset", (req, res) => {
-  const sql = "UPDATE tables SET status = 'Trống', start_time = NULL";
-  db.query(sql, (err) => {
-    if (err) return res.send("Lỗi reset: " + err.message);
-    res.send("Đã RESET toàn bộ bàn về 0!");
-  });
-});
-
-// API 4: SETUP (Tạo bảng và dữ liệu mẫu nếu chưa có)
-app.get("/api/setup", (req, res) => {
-  const sqlCreateTable = `
-      CREATE TABLE IF NOT EXISTS tables (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        type VARCHAR(50),
-        status VARCHAR(50) DEFAULT 'Trống',
-        start_time DATETIME
-      )
-    `;
-  const sqlClear = "TRUNCATE TABLE tables";
-  const sqlInsert = `
-      INSERT INTO tables (name, type, status) VALUES 
-      ('Bàn 1', 'Lỗ', 'Trống'),
-      ('Bàn 2', 'Phăng', 'Trống'),
-      ('Bàn 3', 'Lỗ', 'Trống'),
-      ('Bàn 4', 'Phăng', 'Trống')
-    `;
-
-  db.query(sqlCreateTable, (err) => {
-    if (err) return res.status(500).send("Lỗi tạo bảng: " + err.message);
-    db.query(sqlClear, (err) => {
-      if (err) return res.status(500).send("Lỗi xóa cũ: " + err.message);
-      db.query(sqlInsert, (err) => {
-        if (err) return res.status(500).send("Lỗi thêm mới: " + err.message);
-        res.send("Đã KHÔI PHỤC 4 bàn mẫu thành công!");
-      });
+// 2. Thêm món
+app.post("/api/menu", (req, res) => {
+  const { name, price, category } = req.body;
+  const sql = "INSERT INTO menu (name, price, category) VALUES (?, ?, ?)";
+  db.query(sql, [name, price, category], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({
+      id: results.insertId,
+      name,
+      price,
+      category,
+      message: "Thêm thành công",
     });
   });
 });
 
-// ================= KHỞI ĐỘNG SERVER =================
+// 3. Sửa món (ĐÃ SỬA LẠI THÀNH PUT) ✅
+app.put("/api/menu/:id", (req, res) => {
+  const { name, price, category } = req.body;
+  const id = req.params.id;
+  const sql = "UPDATE menu SET name = ?, price = ?, category = ? WHERE id = ?";
+  db.query(sql, [name, price, category, id], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: "Cập nhật thành công" });
+  });
+});
+
+// 4. Xóa món
+app.delete("/api/menu/:id", (req, res) => {
+  const id = req.params.id;
+  db.query("DELETE FROM menu WHERE id = ?", [id], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: "Xóa thành công" });
+  });
+});
+
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Server đang chạy trên cổng ${PORT}`);
