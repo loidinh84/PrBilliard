@@ -18,7 +18,7 @@
         <div class="header-right">
           <!-- User -->
           <div class="user-info">
-            <span>Xin Chào Thành Lợi</span>
+            <span id="header-username">Xin Chào Thành Lợi</span>
             <img
               src="./assets/img/background.png"
               alt="Avatar"
@@ -39,19 +39,16 @@
                   class="drop__avatar"
                 />
                 <span class="drop__username">Thành Lợi</span>
-                <span class="drop__email">thanhloi@gmail.com</span>
+                <span class="drop__email">Quản lý</span>
               </div>
               <a href="#"
-                ><img src="./assets/icon/account.svg" alt="" /> Account</a
+                ><img src="./assets/icon/account.svg" alt="" />Tài khoản</a
               >
               <a href="#"
-                ><img src="./assets/icon/setting.svg" alt="" /> Setting</a
+                ><img src="./assets/icon/setting.svg" alt="" />Cài đặt</a
               >
-              <a href="#"
-                ><img src="./assets/icon/light.svg" alt="" /> Appearance</a
-              >
-              <a href="#"
-                ><img src="./assets/icon/logout.svg" alt="" /> Log out</a
+              <a href="#" onclick="logout()"
+                ><img src="./assets/icon/logout.svg" alt="" /> Đăng xuất</a
               >
             </div>
           </div>
@@ -419,7 +416,12 @@
             <input type="text" placeholder="Tìm theo mã hóa đơn, tên bàn..." />
           </div>
           <div class="filter-group">
-            <input type="date" class="history-date-picker" value="2025-01-01" title="Chọn ngày"/>
+            <input
+              type="date"
+              class="history-date-picker"
+              value="2025-01-01"
+              title="Chọn ngày"
+            />
             <button type="button" class="btn-export">
               <img
                 src="./assets/icon/download.svg"

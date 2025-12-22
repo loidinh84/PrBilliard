@@ -104,6 +104,81 @@ app.delete("/api/menu/:id", (req, res) => {
   });
 });
 
+// API Hóa đơn
+app.post("/api/invoices", (req, res) => {
+  const { table_name, total_amount, discount_amount, final_amount, items } =
+    req.body;
+
+  const sqlInvoice =
+    "INSERT INTO invoices (table_name, total_amount, discount_amount, final_amount) VALUES (?, ?, ?, ?)";
+
+  db.query(
+    sqlInvoice,
+    [table_name, total_amount, discount_amount, final_amount],
+    (err, result) => {
+      if (err) {
+        console.error("Lỗi lưu hóa đơn tổng:", err);
+        return res.status(500).json({ error: err.message });
+      }
+
+      const newInvoiceId = result.insertId;
+
+      if (items && items.length > 0) {
+        const sqlDetails =
+          "INSERT INTO invoice_details (invoice_id, item_name, quantity, price) VALUES ?";
+
+        const detailsData = items.map((item) => [
+          newInvoiceId,
+          item.name,
+          item.quantity,
+          item.price,
+        ]);
+
+        db.query(sqlDetails, [detailsData], (errDetails) => {
+          if (errDetails) {
+            console.error("Lỗi lưu chi tiết món:", errDetails);
+            return res.status(500).json({ error: "Lỗi lưu chi tiết món" });
+          }
+          res.json({ message: "Thanh toán thành công!" });
+        });
+      } else {
+        res.json({ message: "Thanh toán thành công (Không có món ăn)!" });
+      }
+    }
+  );
+});
+
+app.get("/api/invoices", (req, res) => {
+  const sql = "SELECT * FROM invoices ORDER BY payment_time DESC";
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
+app.post("/api/login", (req, res) => {
+  const { username, password } = req.body;
+  const sql = "SELECT * FROM users WHERE username = ? AND password = ?";
+  db.query(sql, [username, password], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    
+    if (results.length > 0) {
+      const user = results[0];
+      res.json({
+        success: true,
+        message: "Đăng nhập thành công",
+        user: {
+          id: user.id,
+          username: user.username,
+          role: user.role,
+        },
+      });
+    } else {
+      res.status(401).json({ error: "Sai tên đăng nhập hoặc mật khẩu" });
+    }
+  });
+});
+
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Server đang chạy trên cổng ${PORT}`);

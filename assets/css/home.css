@@ -1833,7 +1833,7 @@ body {
 /* Hiệu ứng Hover */
 .time-input-clean:hover:not(:disabled) {
   background-color: #f0f4ff;
-  color: #4a55a2;
+  color: #4a99a2;
 }
 
 /* Trạng thái Disabled */

@@ -1,3 +1,9 @@
+// const { table } = require("console");
+
+// const { ppid } = require("process");
+
+const tablesStartTimes = {};
+
 // ==================== DOM Elements ====================
 const elements = {
   menuToggle: document.getElementById("menu-toggle"),
@@ -155,63 +161,6 @@ if (elements.historyBtn) {
     elements.historyModal.classList.add("active");
   });
 }
-
-// ===========================Change time====================================
-
-const timeInput = document.getElementById("summary-start-time");
-if (timeInput) {
-  timeInput.addEventListener("click", function () {
-    try {
-      this.showPicker();
-    } catch (error) {
-      console.log("Trình duyệt không hỗ trợ", error);
-    }
-  });
-}
-
-timeInput.addEventListener("change", (e) => {
-  if (!currentTableID) return;
-
-  const newTimeStr = e.target.value;
-  if (!newTimeStr) return;
-
-  // tính thời gian mới
-  const now = new Date();
-  const newStartDate = new Date(newTimeStr);
-
-  let diffSeconds = Math.floor((now - newStartDate) / 1000);
-
-  // Tính khoảng cách từ bắt đầu đến hiện tại
-
-  // Validate: không được chọn giờ tương lai
-  if (diffSeconds < 0) {
-    showToast("Không thể chọn giờ trong tương lai!", "error");
-    e.target.value = tableStartTimes[currentTableID];
-    return;
-  }
-
-  // Cập nhật dữ liệu
-  tableStartTimes[currentTableID] = newTimeStr;
-
-  const tableElement = document
-    .querySelector(`.table__header[data-id="${currentTableID}"]`)
-    .closest(".table");
-  tableElement.currentSeconds = diffSeconds;
-
-  if (tableMeals[currentTableID]) {
-    const tableItem = tableMeals[currentTableID].find(
-      (item) => item.category === "table"
-    );
-    if (tableItem) {
-      const hoursPlayed = diffSeconds / 3600;
-      tableItem.totalPrice = roundMoney(hoursPlayed * tableItem.price);
-    }
-  }
-
-  elements.summaryTime.textContent = formatTime(diffSeconds);
-  renderOrderItems();
-  showToast("Đã cập nhật giờ bắt đầu!", "success");
-});
 
 // ============================History Manager===================================
 if (elements.closeHistoryModal) {
@@ -447,6 +396,7 @@ elements.discountBtn.addEventListener("click", () => {
 elements.checkoutBtn.addEventListener("click", () => {
   if (!currentTableID) return;
 
+  // 1. Lấy thông tin bàn hiện tại
   const tableElement = document
     .querySelector(`.table__header[data-id="${currentTableID}"]`)
     .closest(".table");
@@ -454,11 +404,13 @@ elements.checkoutBtn.addEventListener("click", () => {
   const isPlaying = tableElement.classList.contains("table__playing");
   const hasItems =
     tableMeals[currentTableID] && tableMeals[currentTableID].length > 0;
+
   if (!isPlaying && !hasItems) {
     alert("Bàn này đang trống, không thể thanh toán!");
     return;
   }
 
+  // 2. Tính toán tổng tiền (Giữ nguyên logic cũ của bạn)
   let tempTotal = 0;
   if (tableMeals[currentTableID]) {
     tableMeals[currentTableID].forEach((order) => {
@@ -473,58 +425,66 @@ elements.checkoutBtn.addEventListener("click", () => {
   const discount = tableDiscount[currentTableID] || 0;
   const discountAmount = Math.ceil((tempTotal * discount) / 100);
   const finalBill = tempTotal - discountAmount;
+  const tableName = tableElement.querySelector(".table__title").textContent;
 
-  const formattedBill = new Intl.NumberFormat("vi-VN").format(finalBill);
-
+  // 3. Hiển thị hộp thoại xác nhận
   showConfirm(
-    `Xác nhận thanh toán bàn này?\nTổng tiền: ${new Intl.NumberFormat(
+    `Xác nhận thanh toán ${tableName}?\nTổng tiền: ${new Intl.NumberFormat(
       "vi-VN"
     ).format(finalBill)}đ`,
     () => {
-      // Cộng dồn doanh thu
-      dailyRevenue += finalBill;
-      const revenue = document.getElementById("daily-revenue");
-      if (revenue)
-        revenue.textContent =
-          new Intl.NumberFormat("vi-VN").format(dailyRevenue) + "đ";
+      // --- BẮT ĐẦU ĐOẠN THAY ĐỔI (GỌI SERVER) ---
 
-      // Lưu vào lịch sử
-      const invoice = {
-        id: Date.now(),
-        time: new Date().toLocaleString("vi-VN"),
-        tableName: tableElement.querySelector(".table__title").textContent,
-        total: tempTotal,
-        discount: discountAmount,
-        final: finalBill,
-        items: JSON.parse(JSON.stringify(tableMeals[currentTableID] || [])),
-        staff: "Thành Lợi",
+      // Bước A: Chuẩn bị dữ liệu gửi lên Server
+      const invoiceData = {
+        table_name: tableName,
+        total_amount: tempTotal,
+        discount_amount: discountAmount,
+        final_amount: finalBill,
+        items: tableMeals[currentTableID] || [], // Danh sách món
       };
-      invoiceHistory.unshift(invoice);
 
-      // Dừng bàn
-      const startButton = tableElement.querySelector(".table__start");
+      // Bước B: Gọi API lưu hóa đơn
+      fetch("http://localhost:3000/api/invoices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(invoiceData),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          // Bước C: Gọi API Reset bàn về trạng thái 'Trống'
+          return fetch(`http://localhost:3000/api/tables/${currentTableID}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "Trống" }),
+          });
+        })
+        .then(() => {
+          // Bước D: Dọn dẹp dữ liệu tạm ở Frontend
+          delete tableMeals[currentTableID];
+          delete tableStartTimes[currentTableID];
+          delete tableProgress[currentTableID];
+          delete tableDiscount[currentTableID];
 
-      if (tableElement.classList.contains("table__playing")) {
-        const statusText = tableElement.querySelector(".table__status");
-        const timeCount = tableElement.querySelector(".table__timer");
-        handleTimer(tableElement, startButton, statusText, timeCount);
-      }
+          // Bước E: Tải lại dữ liệu mới nhất từ Server
+          loadData(); // Để bàn chuyển về màu xám (Trống)
+          loadInvoiceHistory(); // Để hiện hóa đơn vừa thanh toán lên lịch sử
 
-      // Reset dữ liệu
-      tableElement.querySelector(".table__timer").textContent = "00:00:00";
-      if (tableElement.timerID) clearInterval(tableElement.timerID);
-      tableElement.currentSeconds = 0;
+          // Đóng bảng chi tiết
+          elements.tableDetails.classList.remove("active");
+          currentTableID = null;
 
-      delete tableMeals[currentTableID];
-      delete tableStartTimes[currentTableID];
-      delete tableProgress[currentTableID];
-      delete tableDiscount[currentTableID];
-
-      elements.tableDetails.classList.remove("active");
-      currentTableID = null;
-      showToast("Thanh toán thành công: " + formattedBill + "đ");
-
-      saveData();
+          showToast(
+            `Thanh toán thành công: ${new Intl.NumberFormat("vi-VN").format(
+              finalBill
+            )}đ`,
+            "success"
+          );
+        })
+        .catch((err) => {
+          console.error("Lỗi thanh toán:", err);
+          showToast("Lỗi kết nối Server!", "error");
+        });
     }
   );
 });
@@ -1055,10 +1015,13 @@ function saveMenu() {
   localStorage.setItem("menuData", JSON.stringify(menuData));
 }
 
-function loadMenu() {
-  const saved = localStorage.getItem("menuData");
-  if (saved) {
-    menuData = JSON.parse(saved);
+async function loadMenu() {
+  try {
+    const response = await fetch("http://localhost:3000/api/menu");
+    menuData = await response.json();
+    renderMenu();
+  } catch (error) {
+    console.error("Lỗi tải menu", error);
   }
 }
 
@@ -1094,37 +1057,38 @@ elements.addMenuForm.addEventListener("submit", (e) => {
   const category = elements.menuCategoryInput.value;
 
   if (!name) {
-    alert("Vui lòng nhập tên món!");
+    showAlert("Vui lòng nhập tên món!");
     elements.menuNameInput.focus();
     return;
   }
 
-  if (!price || price < 0) {
-    alert("Giá tiền không hợp lệ!");
-    elements.menuPriceInput.focus();
-    return;
-  }
-
+  const itemData = { name, price, category };
   if (editItem) {
-    const item = menuData.find((m) => m.id === editItem);
-    if (item) {
-      item.name = name;
-      item.price = price;
-      item.category = category;
-    }
+    fetch(`http://localhost:3000/api/menu/${editItem}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(itemData),
+    }).then((res) => {
+      if (res.ok) {
+        loadMenu();
+        document.getElementById("add-menu-modal").classList.remove("active");
+        editItem = null;
+        showToast("Đã sửa món thành công!");
+      }
+    });
   } else {
-    const newItem = {
-      id: Date.now(),
-      name: name,
-      price: price,
-      category: category,
-    };
-    menuData.push(newItem);
+    fetch("http://localhost:3000/api/menu", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(itemData),
+    }).then((res) => {
+      if (res.ok) {
+        loadMenu();
+        document.getElementById("add-menu-modal").classList.remove("active");
+        showToast("Đã thêm món mới!");
+      }
+    });
   }
-  saveMenu();
-  renderMenu();
-  document.getElementById("add-menu-modal").classList.remove("active");
-  editItem = null;
 });
 
 // Delete/Edit item
@@ -1163,6 +1127,50 @@ elements.menuItemList.addEventListener("click", (e) => {
 loadMenu();
 
 // ==================== Utility Functions ====================
+function loadInvoiceHistory() {
+  fetch("http://localhost:3000/api/invoices")
+    .then((res) => res.json())
+    .then((invoices) => {
+      // Xóa danh sách cũ trên giao diện
+      const historyList = document.querySelector(".history-list"); // Kiểm tra lại class trong HTML của bạn
+      if (!historyList) return;
+      historyList.innerHTML = "";
+
+      // Tính tổng doanh thu từ database luôn
+      let totalRevenue = 0;
+
+      invoices.forEach((inv) => {
+        totalRevenue += inv.final_amount;
+
+        // Vẽ từng hóa đơn ra
+        const item = document.createElement("div");
+        item.className = "history-item";
+        item.innerHTML = `
+                    <div class="history-info">
+                        <strong>${inv.table_name}</strong> <br>
+                        <small>${new Date(inv.payment_time).toLocaleString(
+                          "vi-VN"
+                        )}</small>
+                    </div>
+                    <div class="history-price">
+                        ${new Intl.NumberFormat("vi-VN").format(
+                          inv.final_amount
+                        )}đ
+                    </div>
+                `;
+        historyList.appendChild(item);
+      });
+
+      // Cập nhật số tổng doanh thu lên màn hình
+      const revenueEl = document.getElementById("daily-revenue");
+      if (revenueEl) {
+        revenueEl.textContent =
+          new Intl.NumberFormat("vi-VN").format(totalRevenue) + "đ";
+      }
+    })
+    .catch((err) => console.error("Lỗi tải lịch sử:", err));
+}
+
 function formatTime(countTime) {
   const hours = Math.floor(countTime / 3600);
   const minutes = Math.floor((countTime % 3600) / 60);
@@ -1221,72 +1229,93 @@ function saveData() {
   localStorage.setItem("billiards_data", JSON.stringify(dataToSave));
 }
 
-function loadData() {
-  const savedJSON = localStorage.getItem("billiards_data");
-  if (!savedJSON) return;
-  const data = JSON.parse(savedJSON);
+async function loadData() {
+  try {
+    const response = await fetch("http://localhost:3000/api/tables");
+    const dbTables = await response.json();
 
-  // Khôi phục dữ liệu
-  menuData = data.menuData || menuData;
-  tableMeals = data.tableMeals || {};
-  tableStartTimes = data.tableStartTimes || {};
-  tableDiscount = data.tableDiscount || {};
-  invoiceHistory = data.invoiceHistory || [];
-  dailyRevenue = data.dailyRevenue || 0;
-  currentTables = data.currentTables || 0;
+    // Cập nhật số bàn
+    currentTables = dbTables.length;
+    if (elements.tablesCount) elements.tablesCount.textContent = currentTables;
 
-  // Cập nhật giao diện thống kê
-  if (elements.dailyRevenue) {
-    elements.dailyRevenue.textContent =
-      new Intl.NumberFormat("vi-VN").format(dailyRevenue) + "đ";
-  }
-
-  if (elements.tablesCount) elements.tablesCount.textContent = currentTables;
-
-  if (data.tablesList && data.tablesList.length > 0) {
+    // Reset danh sách và biến đếm số bàn đang chơi
     elements.tableList.innerHTML = "";
+    currentPlaying = 0;
 
-    data.tablesList.forEach((t) => {
+    dbTables.forEach((t) => {
+      // 1. Render HTML cơ bản
       const html = `
         <div class="table">
           <div class="table__header" data-id="${t.id}">
             <h3 class="table__title">${t.name}</h3>
             <div class="table__menu"><button class="table__toggle">⋮</button></div>
-        </div>
-        <div class="table__body">
+          </div>
+          <div class="table__body">
             <span>Giờ chơi: <span class="table__timer">00:00:00</span></span>
-              <span class="table__type">Loại: ${t.type}</span>
-              <span>Trạng thái: <span class="table__status">Trống</span></span>
-            </div>
-            <button class="table__start">Start</button>
+            <span class="table__type">Loại bàn: ${t.type}</span>
+            <span>Trạng thái: <span class="table__status">${t.status}</span></span>
+          </div>
+          <button class="table__start">Start</button>
         </div>
       `;
       elements.tableList.insertAdjacentHTML("beforeend", html);
 
-      if (tableStartTimes[t.id]) {
-        const tableHeader = document
-          .querySelector(`.table__header[data-id="${t.id}"]`)
-          .closest(".table");
+      // 2. KÍCH HOẠT LẠI TRẠNG THÁI NẾU ĐANG CHƠI
+      if (t.status === "Đang chơi") {
+        const tableHeader =
+          elements.tableList.lastElementChild.querySelector(".table__header");
+        const tableContainer = tableHeader.parentElement;
+        const timeCount = tableContainer.querySelector(".table__timer");
+        const startButton = tableContainer.querySelector(".table__start");
+        const statusText = tableContainer.querySelector(".table__status");
 
-        if (tableHeader) {
-          const tableEl = tableHeader.closest(".table");
-          const startBtn = tableEl.querySelector(".table__start");
-          const statusTxt = tableEl.querySelector(".table__status");
-          const timer = tableEl.querySelector(".table__timer");
+        // Cập nhật giao diện
+        tableContainer.classList.add("table__playing");
+        startButton.textContent = "Stop";
+        statusText.textContent = "Đang chơi";
 
-          const now = new Date();
-          const start = new Date(tableStartTimes[t.id]);
-          const diffSeconds = Math.floor((now - start) / 1000);
+        let seconds = t.play_seconds ? t.play_seconds : 0;
 
-          tableEl.currentSeconds = diffSeconds;
-          handleTimer(tableEl, startBtn, statusTxt, timer);
+        tableContainer.currentSeconds = seconds;
+        timeCount.textContent = formatTime(seconds);
+
+        if (t.start_time_str) {
+          tableStartTimes[t.id] = t.start_time_str.replace(" ", "T");
         }
+        currentPlaying++;
+
+        // Chạy đồng hồ
+        if (tableContainer.timerID) clearInterval(tableContainer.timerID);
+        tableContainer.timerID = setInterval(() => {
+          tableContainer.currentSeconds++;
+          timeCount.textContent = formatTime(tableContainer.currentSeconds);
+        }, 1000);
       }
     });
+
+    // Cập nhật số bàn đang chơi lên header
+    if (elements.playingCount)
+      elements.playingCount.textContent = currentPlaying;
+  } catch (error) {
+    console.error("Lỗi khi tải dữ liệu:", error);
   }
 }
 
-loadData();
+// Gọi APT cập nhật
+async function updateTableStatus(id, status, startTime) {
+  try {
+    await fetch(`http://localhost:3000/api/tables/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status: status,
+      }),
+    });
+    console.log(`Đã lưu trạng thái bàn ${id}: ${status}`);
+  } catch (error) {
+    console.error("Lỗi lưu trạng thái:", error);
+  }
+}
 
 // ==================== Table HTML Template ====================
 function createTableHTML(name, type) {
@@ -1322,6 +1351,7 @@ function createTableHTML(name, type) {
 function roundMoney(amount) {
   return Math.ceil(amount / 1000) * 1000;
 }
+
 function handleTimer(tableContainer, startButton, statusText, timeCount) {
   const playing = tableContainer.classList.toggle("table__playing");
   const tableHeader = tableContainer.querySelector(".table__header");
@@ -1334,6 +1364,9 @@ function handleTimer(tableContainer, startButton, statusText, timeCount) {
     if (!tableStartTimes[tableID]) {
       tableStartTimes[tableID] = getCurrentDateTimeInput();
     }
+
+    updateTableStatus(tableID, "Đang chơi");
+
     currentPlaying++;
     elements.playingCount.textContent = currentPlaying;
 
@@ -1371,10 +1404,12 @@ function handleTimer(tableContainer, startButton, statusText, timeCount) {
     statusText.textContent = "Trống";
     clearInterval(tableContainer.timerID);
 
+    delete tableStartTimes[tableID];
+
+    updateTableStatus(tableID, "Trống");
+
     currentPlaying--;
     elements.playingCount.textContent = currentPlaying;
-
-    saveData();
   }
 }
 
@@ -1457,14 +1492,19 @@ elements.deleteSubmit.addEventListener("click", () => {
     elements.deleteModal.classList.remove("active");
     return;
   }
-  if (itemDeleteID) {
-    menuData = menuData.filter((item) => item.id !== itemDeleteID);
-    saveMenu();
-    renderMenu();
-    renderDetailsMenu();
 
-    itemDeleteID = null;
-    elements.deleteModal.classList.remove("active");
+  if (itemDeleteID) {
+    fetch("http://localhost:3000/api/tables/delete", {
+      method: "DELETE",
+    }).then((res) => {
+      if (res.ok) {
+        loadMenu();
+        renderDetailsMenu();
+        itemDeleteID = null;
+        elements.deleteModal.classList.remove("active");
+        showToast("Đã xóa món!");
+      }
+    });
   }
 });
 
@@ -1531,6 +1571,128 @@ elements.closeDetailBtn.addEventListener("click", () => {
   elements.tableDetails.classList.remove("active");
   currentTableID = null;
 });
+
+// ==================Phục hồi dữ liệu tuừ localStorage ==================
+function loadSavedData() {
+  const saved = localStorage.getItem("billiards_data");
+  if (saved) {
+    const data = JSON.parse(saved);
+
+    // 1. Lấy lại Lịch sử hóa đơn
+    if (data.invoiceHistory) {
+      invoiceHistory = data.invoiceHistory;
+    }
+
+    // 2. Lấy lại Doanh thu trong ngày
+    if (data.dailyRevenue) {
+      dailyRevenue = data.dailyRevenue;
+      // Cập nhật lên màn hình
+      const revenueEl = document.getElementById("daily-revenue"); // Kiểm tra lại ID trong file HTML của bạn
+      if (revenueEl) {
+        revenueEl.textContent =
+          new Intl.NumberFormat("vi-VN").format(dailyRevenue) + "đ";
+      }
+    }
+    if (data.tableMeals) tableMeals = data.tableMeals;
+    if (data.tableDiscount) tableDiscount = data.tableDiscount;
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadData();
+  loadMenu();
+  loadInvoiceHistory();
+});
+
+const userRole = localStorage.getItem("user_role");
+const userName = localStorage.getItem("user_name");
+if (!userRole) {
+  window.location.href = "login.html";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const nameDisplay = document.getElementById("dropdown-username");
+  if (nameDisplay && userName) {
+    nameDisplay.textContent = `Xin chào, ${userName}`;
+  }
+});
+
+function logout() {
+  showConfirm("Bạn có chắc muốn đăng xuất?", function () {
+    localStorage.clear();
+    window.location.href = "login.html";
+  });
+}
+
+// ==========================
+const timeInputForEdit = document.getElementById("summary-start-time");
+
+if (timeInputForEdit) {
+  timeInputForEdit.addEventListener("click", function () {
+    try {
+      this.showPicker();
+    } catch (err) {
+      console.log("Trình duyệt không hỗ trợ showPicker");
+    }
+  });
+  timeInputForEdit.addEventListener("change", (e) => {
+    if (!currentTableID) return;
+
+    const newTimeStr = e.target.value; // Lúc nào cũng dạng: "2023-12-16T15:30"
+    if (!newTimeStr) return;
+
+    // 1. Cập nhật ngay vào biến lưu trữ (để lần sau mở lại vẫn thấy giờ mới)
+    tableStartTimes[currentTableID] = newTimeStr;
+
+    // 2. Tính toán số giây chênh lệch
+    const now = new Date();
+    const newStartDate = new Date(newTimeStr);
+    let diffSeconds = Math.floor((now - newStartDate) / 1000);
+
+    // Chặn tương lai
+    if (diffSeconds < 0) {
+      showToast("Không thể chọn giờ tương lai!", "error");
+      // Trả lại giờ hiện tại nếu sai
+      e.target.value = getCurrentDateTimeInput();
+      return;
+    }
+
+    // 3. Cập nhật hiển thị trên giao diện bàn
+    const tableElement = document
+      .querySelector(`.table__header[data-id="${currentTableID}"]`)
+      .closest(".table");
+
+    tableElement.currentSeconds = diffSeconds;
+
+    // Cập nhật text đếm giờ trong modal
+    if (elements.summaryTime)
+      elements.summaryTime.textContent = formatTime(diffSeconds);
+
+    // Tính lại tiền
+    if (tableMeals[currentTableID]) {
+      const tableItem = tableMeals[currentTableID].find(
+        (item) => item.category === "table"
+      );
+      if (tableItem) {
+        const hoursPlayed = diffSeconds / 3600;
+        tableItem.totalPrice = roundMoney(hoursPlayed * tableItem.price);
+      }
+    }
+    renderOrderItems();
+
+    // 4. Gửi lên Server (Đổi T thành khoảng trắng để MySQL hiểu)
+    const timeForServer = newTimeStr.replace("T", " ");
+
+    fetch(`http://localhost:3000/api/tables/${currentTableID}/update-time`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ start_time: timeForServer }),
+    }).then((res) => {
+      if (res.ok) showToast("Đã cập nhật giờ!", "success");
+      else showToast("Lỗi server!", "error");
+    });
+  });
+}
 
 // Close menus when clicking outside
 window.addEventListener("click", () => {
